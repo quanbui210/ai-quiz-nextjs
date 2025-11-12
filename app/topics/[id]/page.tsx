@@ -4,20 +4,24 @@ import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, BookOpen, Sparkles, Loader2 } from "lucide-react"
-import { Topic } from "@/types/prisma"
+import { ArrowLeft, BookOpen, Sparkles, Loader2, Clock, Play, CheckCircle2 } from "lucide-react"
+import { Topic, Quiz } from "@/types/prisma"
+import { API_ENDPOINTS } from "@/lib/constants"
+import { QuizGenerationDialog } from "@/components/quiz/quiz-generation-dialog"
+import Link from "next/link"
 
 export default function TopicPage() {
   const params = useParams()
   const router = useRouter()
   const topicId = params.id as string
   const [topic, setTopic] = useState<Topic | null>(null)
+  const [quizzes, setQuizzes] = useState<Quiz[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingQuizzes, setIsLoadingQuizzes] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
+  const [isQuizDialogOpen, setIsQuizDialogOpen] = useState(false)
   useEffect(() => {
     if (!topicId) return
-
     const fetchTopic = async () => {
       setIsLoading(true)
       setError(null)
@@ -33,6 +37,9 @@ export default function TopicPage() {
           }
         }
 
+        const apiUrl =  "http://localhost:3001"
+        const backendUrl = `${apiUrl}${API_ENDPOINTS.TOPIC.GET(topicId)}`
+
         const headers: HeadersInit = {
           "Content-Type": "application/json",
         }
@@ -41,20 +48,21 @@ export default function TopicPage() {
           headers.Authorization = `Bearer ${authToken}`
         }
 
-        const response = await fetch(`/api/topic/${topicId}`, {
+        const response = await fetch(backendUrl, {
           method: "GET",
           headers,
         })
-
+        console.log("response", response)
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({
             error: "Failed to get topic",
           }))
-          throw new Error(errorData.error || errorData.details || "Failed to get topic")
+          console.error("Topic fetch error:", response.status, errorData)
+          throw new Error(errorData.error || errorData.details || `Failed to get topic (${response.status})`)
         }
 
         const data = await response.json()
-        setTopic(data.topic)
+        setTopic(data)
       } catch (err) {
         console.error("Failed to fetch topic:", err)
         setError(err instanceof Error ? err.message : "Failed to load topic")
@@ -64,6 +72,60 @@ export default function TopicPage() {
     }
 
     fetchTopic()
+  }, [topicId])
+
+  useEffect(() => {
+    if (!topicId) return
+
+    const fetchQuizzes = async () => {
+      setIsLoadingQuizzes(true)
+
+      try {
+        const authData = localStorage.getItem("auth-storage")
+        let authToken: string | null = null
+        if (authData) {
+          try {
+            const parsed = JSON.parse(authData)
+            authToken = parsed?.state?.session?.access_token || null
+          } catch {
+          }
+        }
+
+        const apiUrl = "http://localhost:3001"
+        const backendUrl = `${apiUrl}${API_ENDPOINTS.QUIZ.LIST_BY_TOPIC(topicId)}`
+
+        const headers: HeadersInit = {
+          "Content-Type": "application/json",
+        }
+
+        if (authToken) {
+          headers.Authorization = `Bearer ${authToken}`
+        }
+
+        const response = await fetch(backendUrl, {
+          method: "GET",
+          headers,
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({
+            error: "Failed to get quizzes",
+          }))
+          console.error("Quizzes fetch error:", response.status, errorData)
+          return
+        }
+
+        const data = await response.json()
+        const quizzesList = Array.isArray(data) ? data : data.quizzes || []
+        setQuizzes(quizzesList)
+      } catch (err) {
+        console.error("Failed to fetch quizzes:", err)
+      } finally {
+        setIsLoadingQuizzes(false)
+      }
+    }
+
+    fetchQuizzes()
   }, [topicId])
 
   if (isLoading) {
@@ -152,10 +214,7 @@ export default function TopicPage() {
               </p>
               <Button
                 size="lg"
-                onClick={() => {
-                  // TODO: Navigate to quiz generation page
-                  console.log("Generate quiz for topic:", topic.id)
-                }}
+                onClick={() => setIsQuizDialogOpen(true)}
                 className="mt-4"
               >
                 <Sparkles className="mr-2 h-5 w-5" />
@@ -164,7 +223,107 @@ export default function TopicPage() {
             </div>
           </div>
         </div>
+
+        {/* Quizzes List */}
+        <div className="rounded-lg bg-white p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-blue-600" />
+              <h2 className="text-lg font-semibold text-gray-900">
+                Quizzes ({quizzes.length})
+              </h2>
+            </div>
+          </div>
+
+          {isLoadingQuizzes ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+            </div>
+          ) : quizzes.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p>No quizzes yet. Create your first quiz to get started!</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {quizzes.map((quiz) => (
+                <Link
+                  key={quiz.id}
+                  href={`/quizzes/${quiz.id}`}
+                  className="block p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between">
+                      <h3 className="font-semibold text-gray-900 line-clamp-2">
+                        {quiz.title}
+                      </h3>
+                      {quiz.status === "COMPLETED" && (
+                        <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 ml-2" />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <span className="capitalize">{quiz.difficulty.toLowerCase()}</span>
+                      <span>•</span>
+                      <span>{quiz.count} questions</span>
+                      {quiz.timer && (
+                        <>
+                          <span>•</span>
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-4 w-4" />
+                            <span>{Math.floor(quiz.timer / 60000)} min</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between pt-2">
+                      <span className="text-xs text-gray-500">
+                        {new Date(quiz.createdAt).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          if (quiz.status === "COMPLETED") {
+                            router.push(`/quizzes/${quiz.id}/results`)
+                          } else {
+                            router.push(`/quizzes/${quiz.id}`)
+                          }
+                        }}
+                      >
+                        {quiz.status === "COMPLETED" ? (
+                          <>
+                            <CheckCircle2 className="h-4 w-4 mr-1" />
+                            View Results
+                          </>
+                        ) : (
+                          <>
+                            <Play className="h-4 w-4 mr-1" />
+                            {quiz.status === "PENDING" ? "Continue Quiz" : "Start"}
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Quiz Generation Dialog */}
+      {topic && (
+        <QuizGenerationDialog
+          open={isQuizDialogOpen}
+          onOpenChange={setIsQuizDialogOpen}
+          topicName={topic.name}
+          topicId={topic.id}
+        />
+      )}
     </MainLayout>
   )
 }

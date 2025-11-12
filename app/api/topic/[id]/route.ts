@@ -9,7 +9,6 @@ export async function GET(
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
     const topicId = params.id
 
-    // Forward Authorization header from the request
     const authHeader = request.headers.get("Authorization")
 
     const headers: HeadersInit = {

@@ -54,17 +54,27 @@
           return response.json();
         })
         .then(data => {
-          const authData = {
-            state: {
-              user: data.user,
-              session: data.session,
-              isAuthenticated: true,
-              isLoading: false,
-            },
-            version: 0,
-          };
-          localStorage.setItem('auth-storage', JSON.stringify(authData));
+          // Store session data (backend expects these)
+          if (data.session) {
+            localStorage.setItem('supabase_session', JSON.stringify(data.session));
+            localStorage.setItem('access_token', data.session.access_token);
+          }
+
+          // Store user data in Zustand format
+          if (data.user) {
+            const authData = {
+              state: {
+                user: data.user,
+                session: data.session,
+                isAuthenticated: true,
+                isLoading: false,
+              },
+              version: 0,
+            };
+            localStorage.setItem('auth-storage', JSON.stringify(authData));
+          }
           
+          // Redirect to dashboard
           window.location.href = '/dashboard';
         })
         .catch(error => {

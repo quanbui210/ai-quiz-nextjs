@@ -27,11 +27,30 @@ export function TopicSuggestionForm() {
     setSuggestError(null)
 
     try {
-      const response = await fetch("/api/topic/suggest", {
+      const authData = localStorage.getItem("auth-storage")
+      let authToken: string | null = null
+      if (authData) {
+        try {
+          const parsed = JSON.parse(authData)
+          authToken = parsed?.state?.session?.access_token || null
+        } catch {
+        }
+      }
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
+      const backendUrl = `${apiUrl}${API_ENDPOINTS.TOPIC.SUGGEST}`
+
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      }
+
+      if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`
+      }
+
+      const response = await fetch(backendUrl, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify({ userTopic: userTopic.trim() }),
       })
 
@@ -45,7 +64,6 @@ export function TopicSuggestionForm() {
       const data: TopicSuggestResponse = await response.json()
       setSuggestions(data.topics || [])
     } catch (error) {
-      console.error("Suggest error:", error)
       setSuggestError(error instanceof Error ? error.message : "Failed to get suggestions")
     } finally {
       setIsSuggesting(false)
@@ -82,9 +100,11 @@ export function TopicSuggestionForm() {
           const parsed = JSON.parse(authData)
           authToken = parsed?.state?.session?.access_token || null
         } catch {
-          // Ignore parse errors
         }
       }
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
+      const backendUrl = `${apiUrl}${API_ENDPOINTS.TOPIC.CREATE}`
 
       const requestBody = {
         name: topicName,
@@ -98,7 +118,7 @@ export function TopicSuggestionForm() {
         headers.Authorization = `Bearer ${authToken}`
       }
 
-      const response = await fetch("/api/topic/create", {
+      const response = await fetch(backendUrl, {
         method: "POST",
         headers,
         body: JSON.stringify(requestBody),

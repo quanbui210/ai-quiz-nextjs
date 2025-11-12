@@ -28,15 +28,18 @@ const navigation = [
 
 export function Sidebar() {
   const pathname = usePathname()
-  const { user, signOut } = useAuth()
+  const {  signOut } = useAuth()
+  const storedUser = localStorage.getItem("auth-storage")
+  const parsedUser = storedUser ? JSON.parse(storedUser) : null
+  const userData = parsedUser?.state?.session?.user || null
   
-  const displayName = user?.user_metadata?.name || 
-                      user?.user_metadata?.full_name || 
+  const displayName = userData?.user_metadata?.name || 
+                      userData?.user_metadata?.full_name || 
                       "User"
-  const displayAvatar = user?.user_metadata?.avatar_url || 
-                        user?.user_metadata?.picture || 
+  const displayAvatar = userData?.user_metadata?.avatar_url || 
+                        userData?.user_metadata?.picture || 
                         null
-  const displayEmail = user?.email || null
+  const displayEmail = userData?.email || null
 
   
   return (

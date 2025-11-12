@@ -13,7 +13,6 @@ export default function NewTopicPage() {
   return (
     <MainLayout>
       <div className="max-w-3xl mx-auto space-y-6">
-        {/* Header */}
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -33,7 +32,6 @@ export default function NewTopicPage() {
           </div>
         </div>
 
-        {/* Topic Suggestion Form */}
         <TopicSuggestionForm />
       </div>
     </MainLayout>
