@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Sparkles, Loader2, Check, X, AlertCircle, Clock } from "lucide-react"
+import { Wand2, Loader2, Check, X, AlertCircle, Clock, Lightbulb, Rocket, SparkleIcon, Sparkles } from "lucide-react"
 import { API_ENDPOINTS } from "@/lib/constants"
 import { Difficulty, QuizType } from "@/types/prisma"
 import { useAuth } from "@/hooks/use-auth"
@@ -74,7 +74,6 @@ export function QuizGenerationDialog({
   } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // Get auth token helper
   const getAuthToken = useCallback((): string | null => {
     const authData = localStorage.getItem("auth-storage")
     if (!authData) return null
@@ -94,7 +93,7 @@ export function QuizGenerationDialog({
 
     try {
       const authToken = getAuthToken()
-      const apiUrl = "http://localhost:3001"
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
       const backendUrl = `${apiUrl}${API_ENDPOINTS.QUIZ.SUGGEST_TOPIC}`
 
       const headers: HeadersInit = {
@@ -300,7 +299,6 @@ export function QuizGenerationDialog({
         throw new Error(errorData.error || errorData.message || "Failed to create quiz")
       }
 
-      // Parse the response text as JSON
       let data: QuizCreateResponse
       try {
         data = JSON.parse(responseText)
@@ -350,7 +348,7 @@ export function QuizGenerationDialog({
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-blue-600" />
+            <Wand2 className="h-5 w-5 text-blue-600" />
             Generate Quiz
           </DialogTitle>
           <DialogDescription>
@@ -410,7 +408,7 @@ export function QuizGenerationDialog({
           {suggestions.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-blue-600" />
+                <Lightbulb className="h-4 w-4 text-blue-600" />
                 <h3 className="text-sm font-medium text-gray-900">Suggested Topics</h3>
                 {isSuggesting && (
                   <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
@@ -476,8 +474,8 @@ export function QuizGenerationDialog({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={QuizType.MULTIPLE_CHOICE}>Multiple Choice</SelectItem>
-                    <SelectItem value={QuizType.TRUE_FALSE}>True/False</SelectItem>
-                    <SelectItem value={QuizType.SHORT_ANSWER}>Short Answer</SelectItem>
+                    <SelectItem disabled={true} value={QuizType.TRUE_FALSE}>True/False</SelectItem>
+                    <SelectItem disabled={true} value={QuizType.SHORT_ANSWER}>Short Answer</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

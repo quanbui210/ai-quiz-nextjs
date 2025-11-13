@@ -36,16 +36,18 @@ apiClient.interceptors.request.use(
   }
 )
 
-// Response interceptor for error handling
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Handle common errors
     if (error.response?.status === 401) {
-      // Clear auth on 401
       if (typeof window !== "undefined") {
-        localStorage.removeItem("auth-storage")
-        window.location.href = "/login"
+        const isDev = process.env.NODE_ENV === "development"
+        const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+
+        if (!isDev || !isLocalhost || error.response) {
+          localStorage.removeItem("auth-storage")
+          window.location.href = "/login"
+        }
       }
     }
     return Promise.reject(error)

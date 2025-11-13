@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Sparkles, X } from "lucide-react"
+import { ArrowLeft, BookOpen, X } from "lucide-react"
 import { TopicSuggestionForm } from "@/components/topics/topic-suggestion-form"
 
 export default function NewTopicPage() {

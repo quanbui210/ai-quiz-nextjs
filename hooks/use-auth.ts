@@ -23,17 +23,37 @@ export function useAuth() {
     setLoading,
   } = useAuthStore()
 
-  const { data: sessionData, mutate: refetchSession } = useAPI<
+  const { data: sessionData, mutate: refetchSession, error: sessionError } = useAPI<
     AuthSessionResponse
-  >(isAuthenticated ? API_ENDPOINTS.AUTH.SESSION : null)
+  >(isAuthenticated ? API_ENDPOINTS.AUTH.SESSION : null, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: true,
+    onErrorRetry: () => {},
+    errorRetryCount: 0,
+  })
 
-  const { data: userData, mutate: refetchUser } = useAPI<AuthMeResponse>(
-    isAuthenticated ? API_ENDPOINTS.AUTH.ME : null
+  const { data: userData, mutate: refetchUser, error: userError } = useAPI<AuthMeResponse>(
+    isAuthenticated ? API_ENDPOINTS.AUTH.ME : null,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      onErrorRetry: () => {},
+      errorRetryCount: 0,
+    }
   )
+
+  useEffect(() => {
+    const sessionIs401 = sessionError && (sessionError as any)?.response?.status === 401
+    const userIs401 = userError && (userError as any)?.response?.status === 401
+    
+    if (sessionIs401 || userIs401) {
+      clearAuth()
+      router.push("/login")
+    }
+  }, [sessionError, userError, clearAuth, router])
   
   useEffect(() => {
     if (userData?.user) {
-      // Backend returns user with Supabase structure
       setUser(userData.user as any)
     }
   }, [userData, setUser])
@@ -77,7 +97,6 @@ export function useAuth() {
     }
   }, [setLoading])
 
-  // Sign out mutation
   const { mutate: signOutMutation, isLoading: isSigningOut } = useMutation<
     { message: string }
   >("post", {
@@ -86,7 +105,6 @@ export function useAuth() {
       router.push("/login")
     },
     onError: () => {
-      // Even if API call fails, clear local auth
       clearAuth()
       router.push("/login")
     },
@@ -96,12 +114,10 @@ export function useAuth() {
     signOutMutation(API_ENDPOINTS.AUTH.SIGNOUT)
   }, [signOutMutation])
 
-  // Handle OAuth callback
   const handleCallback = useCallback(
     async (code: string) => {
       setLoading(true)
       try {
-        // Use Next.js API route as proxy to avoid CORS issues
         const response = await fetch(`/api/auth/callback?code=${code}`)
         
         if (!response.ok) {

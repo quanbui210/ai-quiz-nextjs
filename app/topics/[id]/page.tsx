@@ -4,10 +4,11 @@ import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, BookOpen, Sparkles, Loader2, Clock, Play, CheckCircle2 } from "lucide-react"
+import { ArrowLeft, BookOpen, Rocket, Loader2, Clock, Play, CheckCircle2, Trash2, MoreVertical, Zap } from "lucide-react"
 import { Topic, Quiz } from "@/types/prisma"
 import { API_ENDPOINTS } from "@/lib/constants"
 import { QuizGenerationDialog } from "@/components/quiz/quiz-generation-dialog"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import Link from "next/link"
 
 export default function TopicPage() {
@@ -20,6 +21,13 @@ export default function TopicPage() {
   const [isLoadingQuizzes, setIsLoadingQuizzes] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isQuizDialogOpen, setIsQuizDialogOpen] = useState(false)
+  const [deletingQuizId, setDeletingQuizId] = useState<string | null>(null)
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    open: boolean
+    quizId: string
+    quizTitle: string
+  } | null>(null)
   useEffect(() => {
     if (!topicId) return
     const fetchTopic = async () => {
@@ -128,6 +136,82 @@ export default function TopicPage() {
     fetchQuizzes()
   }, [topicId])
 
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setOpenMenuId(null)
+    }
+    if (openMenuId) {
+      document.addEventListener("click", handleClickOutside)
+      return () => document.removeEventListener("click", handleClickOutside)
+    }
+  }, [openMenuId])
+
+  const handleDeleteQuiz = (quizId: string, quizTitle: string) => {
+    setDeleteConfirm({
+      open: true,
+      quizId,
+      quizTitle,
+    })
+    setOpenMenuId(null)
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return
+
+    const { quizId, quizTitle } = deleteConfirm
+    setDeletingQuizId(quizId)
+
+    try {
+      const authData = localStorage.getItem("auth-storage")
+      let authToken: string | null = null
+      if (authData) {
+        try {
+          const parsed = JSON.parse(authData)
+          authToken = parsed?.state?.session?.access_token || null
+        } catch {
+          // Ignore parse errors
+        }
+      }
+
+      const apiUrl = "http://localhost:3001"
+      const backendUrl = `${apiUrl}${API_ENDPOINTS.QUIZ.DELETE(quizId)}`
+
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      }
+
+      if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`
+      }
+
+      const response = await fetch(backendUrl, {
+        method: "DELETE",
+        headers,
+      })
+
+      if (!response.ok) {
+        const responseText = await response.text()
+        let errorData
+        try {
+          errorData = JSON.parse(responseText)
+        } catch {
+          errorData = { error: responseText || "Failed to delete quiz" }
+        }
+        throw new Error(errorData.error || errorData.details || errorData.message || "Failed to delete quiz")
+      }
+
+      // Remove quiz from local state
+      setQuizzes((prev) => prev.filter((q) => q.id !== quizId))
+    } catch (err) {
+      console.error("Failed to delete quiz:", err)
+      alert(err instanceof Error ? err.message : "Failed to delete quiz")
+    } finally {
+      setDeletingQuizId(null)
+      setDeleteConfirm(null)
+    }
+  }
+
   if (isLoading) {
     return (
       <MainLayout>
@@ -204,7 +288,7 @@ export default function TopicPage() {
           <div className="mt-8 pt-6 border-t">
             <div className="text-center space-y-4">
               <div className="flex items-center justify-center gap-2 text-gray-600">
-                <Sparkles className="h-5 w-5" />
+                <Zap className="h-5 w-5" />
                 <p className="text-base font-medium">
                   Ready to test your knowledge?
                 </p>
@@ -217,7 +301,7 @@ export default function TopicPage() {
                 onClick={() => setIsQuizDialogOpen(true)}
                 className="mt-4"
               >
-                <Sparkles className="mr-2 h-5 w-5" />
+                <Rocket className="mr-2 h-5 w-5" />
                 Start Generate Quiz
               </Button>
             </div>
@@ -246,19 +330,62 @@ export default function TopicPage() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
               {quizzes.map((quiz) => (
-                <Link
+                <div
                   key={quiz.id}
-                  href={`/quizzes/${quiz.id}`}
-                  className="block p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all"
+                  className="relative p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all"
                 >
-                  <div className="space-y-3">
+                  <Link
+                    href={`/quizzes/${quiz.id}`}
+                    className="block space-y-3"
+                  >
                     <div className="flex items-start justify-between">
-                      <h3 className="font-semibold text-gray-900 line-clamp-2">
+                      <h3 className="font-semibold text-gray-900 line-clamp-2 pr-8">
                         {quiz.title}
                       </h3>
-                      {quiz.status === "COMPLETED" && (
-                        <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 ml-2" />
-                      )}
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {quiz.status === "COMPLETED" && (
+                          <CheckCircle2 className="h-5 w-5 text-green-600" />
+                        )}
+                        <div className="relative">
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              setOpenMenuId(openMenuId === quiz.id ? null : quiz.id)
+                            }}
+                            className="p-1 rounded-md hover:bg-gray-100 transition-colors"
+                            title="More options"
+                          >
+                            <MoreVertical className="h-4 w-4 text-gray-600" />
+                          </button>
+                          {openMenuId === quiz.id && (
+                            <div className="absolute right-0 top-8 z-10 w-32 rounded-md bg-white shadow-lg border border-gray-200 py-1">
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  setOpenMenuId(null)
+                                  handleDeleteQuiz(quiz.id, quiz.title)
+                                }}
+                                disabled={deletingQuizId === quiz.id}
+                                className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 disabled:opacity-50"
+                              >
+                                {deletingQuizId === quiz.id ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    Deleting...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Trash2 className="h-4 w-4" />
+                                    Delete
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                     <div className="flex items-center gap-4 text-sm text-gray-600">
                       <span className="capitalize">{quiz.difficulty.toLowerCase()}</span>
@@ -307,8 +434,8 @@ export default function TopicPage() {
                         )}
                       </Button>
                     </div>
-                  </div>
-                </Link>
+                  </Link>
+                </div>
               ))}
             </div>
           )}
@@ -324,6 +451,22 @@ export default function TopicPage() {
           topicId={topic.id}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteConfirm?.open || false}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteConfirm(null)
+          }
+        }}
+        title="Delete Quiz"
+        description={`Are you sure you want to delete "${deleteConfirm?.quizTitle}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={confirmDelete}
+        variant="destructive"
+      />
     </MainLayout>
   )
 }

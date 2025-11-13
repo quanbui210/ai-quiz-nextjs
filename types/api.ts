@@ -72,3 +72,61 @@ export interface TopicCreateResponse {
   }
 }
 
+export interface AnalyticsResponse {
+  weeklyComparison: {
+    attempts: {
+      thisWeek: number
+      lastWeek: number
+      change: number
+    }
+    topics: {
+      thisWeek: number
+      lastWeek: number
+      change: number
+    }
+    progress: {
+      thisWeek: number
+      lastWeek: number
+      change: number
+    }
+  }
+  performance: {
+    timeSeries: {
+      last7Days: Array<{
+        date: string
+        averageScore: number | null
+        attemptCount: number
+      }>
+      last30Days: Array<{
+        date: string
+        averageScore: number | null
+        attemptCount: number
+      }>
+      last90Days: Array<{
+        date: string
+        averageScore: number | null
+        attemptCount: number
+      }>
+    }
+  }
+  topics: Array<{
+    topicId: string
+    topicName: string
+    progressPercentage: number
+    averageScore: number
+    completedQuizzes: number
+    totalQuizzes: number
+    lastAttemptAt: string | null
+  }>
+  overview: {
+    overallProgress: number
+  }
+  time?: {
+    totalTimeSpent: number
+    averageTimeSpent: number
+    totalTimeSet: number
+    averageTimeSet: number
+    timeEfficiency: number
+  }
+}
+

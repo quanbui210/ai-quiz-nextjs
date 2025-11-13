@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft, Clock, CheckCircle2, Loader2 } from "lucide-react"
 import { Quiz, Question } from "@/types/prisma"
 import { API_ENDPOINTS } from "@/lib/constants"
+import { useAuth } from "@/hooks/use-auth"
 
 interface QuizResponse {
   id: string
@@ -28,12 +29,14 @@ interface QuizResponse {
 export default function QuizPage() {
   const params = useParams()
   const router = useRouter()
+  const { user } = useAuth()
   const quizId = params.id as string
   const [quiz, setQuiz] = useState<QuizResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
+  const [initialTimer, setInitialTimer] = useState<number | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   useEffect(() => {
@@ -73,9 +76,7 @@ export default function QuizPage() {
           headers,
         })
 
-        console.log("Quiz response status:", response.status)
 
-        // Read response once
         const responseText = await response.text()
         
         if (!response.ok) {
@@ -115,6 +116,7 @@ export default function QuizPage() {
         setQuiz(data)
         
         if (data.timer) {
+          setInitialTimer(data.timer)
           setTimeRemaining(data.timer)
         }
       } catch (err) {
@@ -167,6 +169,11 @@ export default function QuizPage() {
   const handleSubmit = async () => {
     if (!quiz) return
 
+    if (!user?.id) {
+      setError("User not authenticated")
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -191,28 +198,55 @@ export default function QuizPage() {
         headers.Authorization = `Bearer ${authToken}`
       }
 
-      const answersArray = Object.entries(answers).map(([questionId, answer]) => ({
+      const answersArray = Object.entries(answers).map(([questionId, userAnswer]) => ({
         questionId,
-        answer,
+        userAnswer,
       }))
+
+   
+      const timeSpentSeconds = initialTimer && timeRemaining !== null
+        ? Math.round((initialTimer - timeRemaining) / 1000)
+        : 0
+
+      const payload = {
+        userId: user.id,
+        answers: answersArray,
+        timeSpent: timeSpentSeconds,
+      }
+
 
       const response = await fetch(backendUrl, {
         method: "POST",
         headers,
-        body: JSON.stringify({
-          answers: answersArray,
-        }),
+        body: JSON.stringify(payload),
       })
 
+      const responseText = await response.text()
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({
-          error: "Failed to submit quiz",
-        }))
-        throw new Error(errorData.error || errorData.details || "Failed to submit quiz")
+        let errorData
+        try {
+          errorData = JSON.parse(responseText)
+        } catch {
+          errorData = { error: responseText || "Failed to submit quiz" }
+        }
+        console.error("Quiz submission error:", errorData)
+        throw new Error(errorData.error || errorData.details || errorData.message || "Failed to submit quiz")
       }
 
-      const data = await response.json()
-      router.push(`/quizzes/${quizId}/results`)
+      let data
+      try {
+        data = JSON.parse(responseText)
+      } catch (parseError) {
+        console.error("Failed to parse submission response:", parseError)
+      }
+
+      console.log("Quiz submitted successfully:", data)
+      
+      // Add a small delay to ensure backend has processed the submission
+      setTimeout(() => {
+        router.push(`/quizzes/${quizId}/results`)
+      }, 500)
     } catch (err) {
       console.error("Failed to submit quiz:", err)
       setError(err instanceof Error ? err.message : "Failed to submit quiz")
@@ -261,13 +295,11 @@ export default function QuizPage() {
     )
   }
 
-  // Ensure currentQuestionIndex is within bounds
   const safeQuestionIndex = Math.max(0, Math.min(currentQuestionIndex, quiz.questions.length - 1))
   const currentQuestion = quiz.questions[safeQuestionIndex]
   const answeredCount = Object.keys(answers).length
   const totalQuestions = quiz.questions.length
 
-  // Update currentQuestionIndex if it was out of bounds
   if (currentQuestionIndex !== safeQuestionIndex) {
     setCurrentQuestionIndex(safeQuestionIndex)
   }
@@ -318,7 +350,6 @@ export default function QuizPage() {
           </div>
         </div>
 
-        {/* Question Card */}
         <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200">
           <div className="space-y-6">
             <div>

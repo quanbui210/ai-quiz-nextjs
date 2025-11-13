@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Sparkles, Loader2, Check, X } from "lucide-react"
+import { Wand2, Loader2, Check, X, Lightbulb, Zap } from "lucide-react"
 import { TopicSuggestResponse, TopicCreateResponse } from "@/types/api"
 import { API_ENDPOINTS } from "@/lib/constants"
 
@@ -166,7 +166,7 @@ export function TopicSuggestionForm() {
               placeholder="e.g., JavaScript Fundamentals, Photosynthesis, The Roman Empire"
               className="flex-1 rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <Button
+            {/* <Button
               onClick={handleSuggest}
               disabled={isSuggesting || !userTopic.trim()}
               variant="outline"
@@ -174,10 +174,10 @@ export function TopicSuggestionForm() {
               {isSuggesting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Sparkles className="h-4 w-4 mr-2" />
+                <Wand2 className="h-4 w-4 mr-2" />
               )}
               Get Suggestions
-            </Button>
+            </Button> */}
             {userTopic && (
               <Button onClick={handleClear} variant="ghost" size="icon">
                 <X className="h-4 w-4" />
@@ -194,7 +194,7 @@ export function TopicSuggestionForm() {
       {suggestions.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-blue-600" />
+            <Lightbulb className="h-4 w-4 text-blue-600" />
             <h3 className="text-sm font-medium text-gray-900">
               Suggested Topics
             </h3>
@@ -233,7 +233,6 @@ export function TopicSuggestionForm() {
         </div>
       )}
 
-      {/* Create Button */}
       <div className="flex justify-end gap-3 pt-4 border-t">
         <Button variant="outline" onClick={() => router.back()}>
           Cancel

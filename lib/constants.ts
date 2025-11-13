@@ -19,6 +19,11 @@ export const API_ENDPOINTS = {
     CREATE: "/api/v1/quiz/create",
     GET: (id: string) => `/api/v1/quiz/${id}`,
     LIST_BY_TOPIC: (topicId: string) => `/api/v1/quiz/list/${topicId}`,
+    RESULTS: (id: string) => `/api/v1/results/quiz/${id}`,
+    DELETE: (id: string) => `/api/v1/quiz/${id}`,
+  },
+  ANALYTICS: {
+    ME: "/api/v1/results/analytics/me",
   },
 } as const
 
