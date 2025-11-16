@@ -195,19 +195,136 @@ function AdminDashboardContent() {
               </div>
             </div>
 
-            {stats?.subscriptionBreakdown && stats.subscriptionBreakdown.length > 0 && (
-              <div className="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-                <h3 className="mb-4 text-lg font-semibold text-gray-900">Subscription Breakdown</h3>
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                  {stats.subscriptionBreakdown.map((item) => (
-                    <div key={item.planName} className="rounded-lg bg-gray-50 p-4">
-                      <p className="text-sm font-medium text-gray-600">{item.planName}</p>
-                      <p className="mt-1 text-2xl font-bold text-gray-900">{item.count}</p>
-                    </div>
-                  ))}
+            {stats?.subscriptions && stats.subscriptions.length > 0 && (() => {
+              const paidSubscriptions = stats.subscriptions.filter(
+                (sub) => sub.plan.name.toLowerCase() !== "free"
+              )
+              
+              if (paidSubscriptions.length === 0) return null
+              
+              return (
+                <div className="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+                  <h3 className="mb-4 text-lg font-semibold text-gray-900">Active Subscriptions</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                            User
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                            Plan
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                            Status
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                            Period Start
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                            Period End
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                            Cancels At End
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                            Limits
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                            Created
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200 bg-white">
+                        {paidSubscriptions.map((subscription) => (
+                        <tr key={subscription.id} className="hover:bg-gray-50">
+                          <td className="whitespace-nowrap px-4 py-4">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {subscription.user.name || "No name"}
+                              </div>
+                              <div className="text-sm text-gray-500">{subscription.user.email}</div>
+                              <div className="text-xs text-gray-400">
+                                Joined: {new Date(subscription.user.joinedAt).toLocaleDateString()}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {subscription.plan.name}
+                            </div>
+                            {subscription.plan.stripePriceId && (
+                              <div className="text-xs text-gray-500">
+                                {subscription.plan.stripePriceId.substring(0, 20)}...
+                              </div>
+                            )}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-4">
+                            <span
+                              className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                                subscription.status === "ACTIVE"
+                                  ? "bg-green-100 text-green-800"
+                                  : subscription.status === "CANCELED"
+                                  ? "bg-gray-100 text-gray-800"
+                                  : subscription.status === "PAST_DUE"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : "bg-red-100 text-red-800"
+                              }`}
+                            >
+                              {subscription.status}
+                            </span>
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-500">
+                            {new Date(subscription.currentPeriodStart).toLocaleDateString()}
+                            <div className="text-xs text-gray-400">
+                              {new Date(subscription.currentPeriodStart).toLocaleTimeString()}
+                            </div>
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-500">
+                            {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
+                            <div className="text-xs text-gray-400">
+                              {new Date(subscription.currentPeriodEnd).toLocaleTimeString()}
+                            </div>
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-4">
+                            {subscription.cancelAtPeriodEnd ? (
+                              <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-1 text-xs font-medium text-orange-800">
+                                Yes
+                              </span>
+                            ) : (
+                              <span className="text-sm text-gray-500">No</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-4 text-sm text-gray-500">
+                            <div className="space-y-1">
+                              <div className="text-xs">
+                                Topics: {subscription.limits.maxTopics}
+                              </div>
+                              <div className="text-xs">
+                                Quizzes: {subscription.limits.maxQuizzes}
+                              </div>
+                              <div className="text-xs">
+                                Docs: {subscription.limits.maxDocuments}
+                              </div>
+                              <div className="text-xs text-gray-400">
+                                Models: {subscription.limits.allowedModels.length}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-500">
+                            {new Date(subscription.createdAt).toLocaleDateString()}
+                            <div className="text-xs text-gray-400">
+                              {new Date(subscription.updatedAt).toLocaleDateString()} (updated)
+                            </div>
+                          </td>
+                        </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
-            )}
+              )
+            })()}
           </>
         )}
 

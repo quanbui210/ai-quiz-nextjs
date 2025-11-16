@@ -24,7 +24,7 @@ export default function QuizFromDocumentPage() {
             Coming Soon
           </p>
           <p className="mb-8 text-gray-500">
-            Upload your documents (PDFs, text files, etc.) and automatically generate personalized quizzes based on the content. Our AI will analyze your document, extract key concepts, and create relevant questions to help you master the material.
+            Upload your documents (PDFs, text files, etc.) and automatically generate personalized quizzes based on the content. Our AI uses RAG (Retrieval-Augmented Generation) technology to analyze your document, extract key concepts, and create relevant questions to help you master the material.
           </p>
           <div className="flex justify-center gap-4">
             <Button

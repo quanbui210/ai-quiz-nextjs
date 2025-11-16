@@ -34,7 +34,18 @@
     "icon": "Zap",
     "iconColor": "text-amber-600",
     "story": "Gần nhà mình có ông tầm gần 37, bảo làm phụ hộ mệt quá, thế là xuống tp học 1 khóa lập trình pithon dip learning gì đó, xong rồi làm 300 bài quizz trên Quizzly luyện tập. Bữa mới nói chuyện lại thấy kể mới làm 1 năm mua căn nhà 7 tầng view Tây Hồ!"
+  },
+  {
+    "id": 4,
+    "title": "From Coffee Shop to Data Science",
+    "subtitle": "Late 20s career change",
+    "image": "/images/stories/ongchu.jpg",
+    "imageAlt": "Coffee shop worker story",
+    "gradient": "from-amber-100 to-orange-100",
+    "badgeGradient": "from-amber-500 to-orange-500",
+    "icon": "Zap",
+    "iconColor": "text-amber-600",
+    "story": "Ông chú tôi làm sales sim số đẹp cho Viettel, đợt rồi đói ăn quá nên chỉ cho ngồi luyện code trên Quizzly,  tháng sau ổng vào làm dev cứng FPT rồi , nghe bảo lương 8k vì ngành này đang hot."
   }
-
 ]
 

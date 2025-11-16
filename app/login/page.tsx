@@ -168,24 +168,8 @@ export default function LoginPage() {
                       <Chrome className="mr-2 h-5 w-5" />
                       {isLoading ? "Signing in..." : "Sign in with Google"}
                     </Button>
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t border-gray-300" />
-                      </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-white/80 px-2 text-gray-500">Or</span>
-                      </div>
-                    </div>
-                    <Link href="/admin/login" className="block">
-                      <Button
-                        variant="outline"
-                        className="w-full border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50"
-                        size="lg"
-                      >
-                        <Shield className="mr-2 h-5 w-5" />
-                        Login as Admin
-                      </Button>
-                    </Link>
+                 
+                  
                   </div>
                 </div>
               </div>
@@ -214,7 +198,6 @@ export default function LoginPage() {
           </div>
         </section>
 
-        {/* Features Section */}
         <section className="px-4 py-20 sm:px-6 lg:px-8 bg-white/50">
           <div className="mx-auto max-w-7xl">
             <div className="text-center mb-16">

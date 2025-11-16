@@ -239,6 +239,35 @@ export interface AdminDashboardStats {
       planName: string
       count: number
     }>
+    subscriptions?: Array<{
+      id: string
+      userId: string
+      user: {
+        id: string
+        email: string
+        name: string | null
+        joinedAt: string
+      }
+      plan: {
+        id: string
+        name: string
+        stripePriceId: string | null
+      }
+      status: "ACTIVE" | "CANCELED" | "PAST_DUE" | "UNPAID"
+      currentPeriodStart: string
+      currentPeriodEnd: string
+      cancelAtPeriodEnd: boolean
+      stripeCustomerId: string | null
+      stripeSubscriptionId: string | null
+      limits: {
+        maxTopics: number
+        maxQuizzes: number
+        maxDocuments: number
+        allowedModels: string[]
+      }
+      createdAt: string
+      updatedAt: string
+    }>
   }
 }
 

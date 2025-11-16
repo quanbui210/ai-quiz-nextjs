@@ -15,13 +15,37 @@ export function ProtectedAdminRoute({ children }: ProtectedAdminRouteProps) {
   const hasRedirectedRef = useRef(false)
 
   useEffect(() => {
-    if (!isLoading && !hasRedirectedRef.current) {
-      hasRedirectedRef.current = true
-      if (!isAuthenticated) {
-        router.push("/admin/login")
-      } else if (!isAdmin) {
-        router.push("/dashboard")
+    if (isLoading) {
+      return
+    }
+
+    if (hasRedirectedRef.current) {
+      return
+    }
+
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("auth-storage")
+        if (stored) {
+          const parsed = JSON.parse(stored)
+          const storedIsAdmin = parsed?.state?.isAdmin
+          const storedIsAuthenticated = parsed?.state?.isAuthenticated
+          
+          if (storedIsAuthenticated && storedIsAdmin && !isAuthenticated) {
+            // Wait a bit for API to catch up
+            return
+          }
+        }
+      } catch (e) {
       }
+    }
+
+    hasRedirectedRef.current = true
+    
+    if (!isAuthenticated) {
+      router.push("/admin/login")
+    } else if (isAdmin === false) {
+      router.push("/dashboard")
     }
   }, [isAuthenticated, isLoading, isAdmin, router])
 
@@ -36,6 +60,7 @@ export function ProtectedAdminRoute({ children }: ProtectedAdminRouteProps) {
     )
   }
 
+
   if (!isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -46,7 +71,8 @@ export function ProtectedAdminRoute({ children }: ProtectedAdminRouteProps) {
     )
   }
 
-  if (!isAdmin) {
+
+  if (isAdmin === false) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">

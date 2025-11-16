@@ -6,7 +6,7 @@ import { MainLayout } from "@/components/layout/main-layout"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/hooks/use-auth"
 import { usePlans, useSubscription, useSubscriptionActions } from "@/hooks/use-subscription"
-import { Check, Loader2, Zap, Crown, Sparkles, CheckCircle2 } from "lucide-react"
+import { Check, Loader2, Zap, Crown, Sparkles, CheckCircle2, CreditCard, ExternalLink } from "lucide-react"
 import { AlertCircle } from "lucide-react"
 
 export default function SubscriptionPage() {
@@ -14,8 +14,9 @@ export default function SubscriptionPage() {
   const { isAuthenticated, isLoading: isAuthLoading, isAdmin } = useAuth()
   const { plans, isLoading: isLoadingPlans } = usePlans()
   const { subscription, usage, isLoading: isLoadingSubscription, refetch } = useSubscription()
-  const { createCheckout, isCreatingCheckout } = useSubscriptionActions(refetch)
+  const { createCheckout, isCreatingCheckout, getPortal } = useSubscriptionActions(refetch)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [isOpeningPortal, setIsOpeningPortal] = useState(false)
 
   const hasRedirectedRef = useRef(false)
 
@@ -90,6 +91,16 @@ export default function SubscriptionPage() {
     }
   }
 
+  const handleManageSubscription = async () => {
+    try {
+      setIsOpeningPortal(true)
+      await getPortal()
+    } catch (error) {
+      console.error("Failed to open portal:", error)
+      setIsOpeningPortal(false)
+    }
+  }
+
   const getPlanIcon = (planName: string) => {
     if (planName.toLowerCase().includes("free")) return null
     if (planName.toLowerCase().includes("pro")) return Zap
@@ -125,9 +136,32 @@ export default function SubscriptionPage() {
 
         {subscription && usage && (
           <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">
-              Current Plan: {currentPlan?.name || "Free"}
-            </h2>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Current Plan: {currentPlan?.name || "Free"}
+              </h2>
+              {subscription.stripeSubscriptionId && (
+                <Button
+                  onClick={handleManageSubscription}
+                  disabled={isOpeningPortal}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  {isOpeningPortal ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Opening...
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="h-4 w-4" />
+                      Manage Subscription
+                      <ExternalLink className="h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
                 <p className="text-sm text-gray-600">Topics</p>
@@ -161,6 +195,11 @@ export default function SubscriptionPage() {
               <p className="mt-4 text-sm text-gray-600">
                 Current period ends:{" "}
                 {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
+              </p>
+            )}
+            {subscription.stripeSubscriptionId && (
+              <p className="mt-4 text-sm text-gray-500">
+                Click "Manage Subscription" to update payment methods, view invoices, or cancel your subscription in Stripe.
               </p>
             )}
           </div>

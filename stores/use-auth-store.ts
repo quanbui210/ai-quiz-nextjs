@@ -57,13 +57,17 @@ export const useAuthStore = create<AuthState>()(
           // Backend returns user with Supabase structure (same ID as Prisma now)
           const user = data.user as SupabaseUser
           const session = data.session
+          const currentState = get()
+
+          const isAdmin = data.isAdmin !== undefined ? data.isAdmin : currentState.isAdmin
+          const admin = data.admin !== undefined ? data.admin : currentState.admin
 
           set({
             user,
             session,
             isAuthenticated: !!user && !!session,
-            isAdmin: data.isAdmin || false,
-            admin: data.admin || null,
+            isAdmin,
+            admin,
           })
         },
 
