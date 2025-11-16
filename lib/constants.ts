@@ -23,6 +23,8 @@ export const API_ENDPOINTS = {
     LIST_BY_TOPIC: (topicId: string) => `/api/v1/quiz/list/${topicId}`,
     RESULTS: (id: string) => `/api/v1/results/quiz/${id}`,
     DELETE: (id: string) => `/api/v1/quiz/${id}`,
+    PAUSE: (id: string) => `/api/v1/quiz/${id}/pause`,
+    RESUME: (id: string) => `/api/v1/quiz/${id}/resume`,
   },
   ANALYTICS: {
     ME: "/api/v1/results/analytics/me",
