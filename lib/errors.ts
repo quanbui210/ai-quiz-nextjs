@@ -12,9 +12,11 @@ export class APIError extends Error {
 }
 
 export class ValidationError extends Error {
-  constructor(message: string, public fields?: Record<string, string>) {
+  constructor(
+    message: string,
+    public fields?: Record<string, string>
+  ) {
     super(message)
     this.name = "ValidationError"
   }
 }
-

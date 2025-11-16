@@ -119,4 +119,3 @@ export interface Suggestion {
   topicId: string
   topic?: Topic
 }
-

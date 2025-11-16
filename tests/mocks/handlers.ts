@@ -49,4 +49,3 @@ export const handlers = [
     return HttpResponse.json({ message: "Signed out successfully" })
   }),
 ]
-

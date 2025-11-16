@@ -7,9 +7,7 @@ interface UseMutationOptions<T> {
   onError?: (error: Error) => void
 }
 
-/**
- * Custom hook for API mutations (POST, PUT, DELETE, PATCH)
- */
+
 export function useMutation<T = any>(
   method: "post" | "put" | "patch" | "delete",
   options?: UseMutationOptions<T>
@@ -27,13 +25,22 @@ export function useMutation<T = any>(
       console.log("result", result)
       return result
     } catch (err: any) {
-      const error = err.response
-        ? new APIError(
-            err.response.data?.message || "An error occurred",
-            err.response.status,
-            err.response.data
-          )
-        : new Error("Network error")
+      let error: Error
+      
+      if (err.response) {
+        const message = err.response.data?.message || 
+                       err.response.data?.error || 
+                       err.message || 
+                       "An error occurred"
+        const statusCode = err.response.status
+        const data = err.response.data
+        
+        error = new APIError(message, statusCode, data)
+      } else if (err instanceof Error) {
+        error = err
+      } else {
+        error = new Error(err?.message || "An error occurred")
+      }
 
       setError(error)
       options?.onError?.(error)
@@ -49,4 +56,3 @@ export function useMutation<T = any>(
     error,
   }
 }
-

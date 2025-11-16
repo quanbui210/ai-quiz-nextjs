@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, BookOpen, Bot, Settings, LogOut } from "lucide-react"
+import { LayoutDashboard, BookOpen, Bot, FileText, Settings, LogOut } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { Button } from "@/components/ui/button"
 import { Avatar } from "@/components/ui/avatar"
@@ -20,6 +20,11 @@ const navigation = [
     icon: BookOpen,
   },
   {
+    name: "Quiz from Document",
+    href: "/quizzes/quiz-from-document",
+    icon: FileText,
+  },
+  {
     name: "AI Tutor",
     href: "/ai-tutor",
     icon: Bot,
@@ -28,28 +33,29 @@ const navigation = [
 
 export function Sidebar() {
   const pathname = usePathname()
-  const {  signOut } = useAuth()
+  const { signOut } = useAuth()
   const storedUser = localStorage.getItem("auth-storage")
   const parsedUser = storedUser ? JSON.parse(storedUser) : null
   const userData = parsedUser?.state?.session?.user || null
-  
-  const displayName = userData?.user_metadata?.name || 
-                      userData?.user_metadata?.full_name || 
-                      "User"
-  const displayAvatar = userData?.user_metadata?.avatar_url || 
-                        userData?.user_metadata?.picture || 
-                        null
+
+  const displayName =
+    userData?.user_metadata?.name ||
+    userData?.user_metadata?.full_name ||
+    "User"
+  const displayAvatar =
+    userData?.user_metadata?.avatar_url ||
+    userData?.user_metadata?.picture ||
+    null
   const displayEmail = userData?.email || null
 
-  
   return (
-    <div className="flex h-screen w-64 flex-col bg-white border-r border-gray-200">
+    <div className="flex h-screen w-64 flex-col border-r border-gray-200 bg-white">
       {/* Logo */}
       <div className="flex h-16 items-center gap-3 border-b border-gray-200 px-6">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600">
-          <span className="text-xl font-bold text-white">L</span>
+          <span className="text-xl font-bold text-white">Q</span>
         </div>
-        <span className="text-xl font-semibold text-gray-900">LearnAI</span>
+        <span className="text-xl font-semibold text-gray-900">Quizzly</span>
       </div>
 
       {/* Navigation */}
@@ -76,7 +82,7 @@ export function Sidebar() {
 
       {/* User Profile */}
       <div className="border-t border-gray-200 p-4">
-        <div className="flex items-center gap-3 mb-4">
+        <div className="mb-4 flex items-center gap-3">
           <Avatar
             src={displayAvatar}
             alt={displayName}
@@ -84,14 +90,12 @@ export function Sidebar() {
             email={displayEmail}
             size="md"
           />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-gray-900">
               {displayName}
             </p>
             {displayEmail && (
-              <p className="text-xs text-gray-500 truncate">
-                {displayEmail}
-              </p>
+              <p className="truncate text-xs text-gray-500">{displayEmail}</p>
             )}
           </div>
         </div>
@@ -100,14 +104,14 @@ export function Sidebar() {
         <div className="space-y-1">
           <Link
             href="/settings"
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
           >
             <Settings className="h-4 w-4" />
             Settings
           </Link>
           <button
             onClick={signOut}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
           >
             <LogOut className="h-4 w-4" />
             Log Out
@@ -117,4 +121,3 @@ export function Sidebar() {
     </div>
   )
 }
-

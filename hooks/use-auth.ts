@@ -23,17 +23,12 @@ export function useAuth() {
     setLoading,
   } = useAuthStore()
 
-  const { data: sessionData, mutate: refetchSession, error: sessionError } = useAPI<
-    AuthSessionResponse
-  >(isAuthenticated ? API_ENDPOINTS.AUTH.SESSION : null, {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: true,
-    onErrorRetry: () => {},
-    errorRetryCount: 0,
-  })
-
-  const { data: userData, mutate: refetchUser, error: userError } = useAPI<AuthMeResponse>(
-    isAuthenticated ? API_ENDPOINTS.AUTH.ME : null,
+  const {
+    data: sessionData,
+    mutate: refetchSession,
+    error: sessionError,
+  } = useAPI<AuthSessionResponse>(
+    isAuthenticated ? API_ENDPOINTS.AUTH.SESSION : null,
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
@@ -42,16 +37,28 @@ export function useAuth() {
     }
   )
 
+  const {
+    data: userData,
+    mutate: refetchUser,
+    error: userError,
+  } = useAPI<AuthMeResponse>(isAuthenticated ? API_ENDPOINTS.AUTH.ME : null, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: true,
+    onErrorRetry: () => {},
+    errorRetryCount: 0,
+  })
+
   useEffect(() => {
-    const sessionIs401 = sessionError && (sessionError as any)?.response?.status === 401
+    const sessionIs401 =
+      sessionError && (sessionError as any)?.response?.status === 401
     const userIs401 = userError && (userError as any)?.response?.status === 401
-    
+
     if (sessionIs401 || userIs401) {
       clearAuth()
       router.push("/login")
     }
   }, [sessionError, userError, clearAuth, router])
-  
+
   useEffect(() => {
     if (userData?.user) {
       setUser(userData.user as any)
@@ -68,26 +75,31 @@ export function useAuth() {
     setLoading(true)
     try {
       const loginUrl = "/api/auth/login"
-      
-      
+
       const response = await fetch(loginUrl, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
         },
       })
-      
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: "Unknown error" }))
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: "Unknown error" }))
         console.error("Login response error:", response.status, errorData)
-        throw new Error(`Failed to initiate login: ${response.status} ${errorData.error || errorData.details || "Unknown error"}`)
+        setLoading(false)
+        throw new Error(
+          `Failed to initiate login: ${response.status} ${errorData.error || errorData.details || "Unknown error"}`
+        )
       }
-      
+
       const data = await response.json()
-      
+
       if (data.url) {
         window.location.href = data.url
       } else {
+        setLoading(false)
         throw new Error("No redirect URL in response")
       }
     } catch (error) {
@@ -97,9 +109,9 @@ export function useAuth() {
     }
   }, [setLoading])
 
-  const { mutate: signOutMutation, isLoading: isSigningOut } = useMutation<
-    { message: string }
-  >("post", {
+  const { mutate: signOutMutation, isLoading: isSigningOut } = useMutation<{
+    message: string
+  }>("post", {
     onSuccess: () => {
       clearAuth()
       router.push("/login")
@@ -119,17 +131,23 @@ export function useAuth() {
       setLoading(true)
       try {
         const response = await fetch(`/api/auth/callback?code=${code}`)
-        
+
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ error: "Unknown error" }))
-          throw new Error(errorData.error || errorData.details || "Callback failed")
+          const errorData = await response
+            .json()
+            .catch(() => ({ error: "Unknown error" }))
+          setLoading(false)
+          throw new Error(
+            errorData.error || errorData.details || "Callback failed"
+          )
         }
-        
+
         const data: AuthLoginResponse = await response.json()
         setAuth(data)
         router.push("/dashboard")
       } catch (error) {
         console.error("OAuth callback error:", error)
+        setLoading(false)
         router.push("/login?error=callback_failed")
       } finally {
         setLoading(false)
@@ -150,4 +168,3 @@ export function useAuth() {
     refetchUser,
   }
 }
-

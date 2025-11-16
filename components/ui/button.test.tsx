@@ -6,7 +6,9 @@ import { Button } from "./button"
 describe("Button", () => {
   it("should render button with text", () => {
     render(<Button>Click me</Button>)
-    expect(screen.getByRole("button", { name: /click me/i })).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: /click me/i })
+    ).toBeInTheDocument()
   })
 
   it("should handle click events", async () => {
@@ -34,4 +36,3 @@ describe("Button", () => {
     expect(container.firstChild).toHaveClass("h-11")
   })
 })
-

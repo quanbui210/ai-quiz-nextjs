@@ -1,0 +1,40 @@
+[
+  {
+    "id": 1,
+    "title": "From Scrap Dealer to Tech Lead",
+    "subtitle": "5 years journey",
+    "image": "/images/stories/scrap.jpg",
+    "imageAlt": "Scrap dealer story",
+    "gradient": "from-blue-100 to-purple-100",
+    "badgeGradient": "from-blue-500 to-purple-500",
+    "icon": "BookOpen",
+    "iconColor": "text-blue-600",
+    "story": "Bà hàng xóm nhà mình đây, trước đi buôn đồng nát, tình cờ có thằng sinh viên khoa cntt nó bán đống sách cũ. Thế nào mà bà ấy mua mấy cuốn sách lập trình cầm về đọc. Rồi sáng đi mua đồng nát, tối về đọc sách, cuối tuần ra quán net thực hành trên Quizzly. Sáu tháng sau bà ấy khăn gói lên HN đi phỏng vấn, cũng nhờ code trên giấy nhiều mà mấy bài 'whiteboard' bà ấy làm ngon. Cũng 5 năm rồi, giờ đang làm lead ở một công ty khá lớn. Đúng là cái nghề này mang lại cơ hội đổi đời cho nhiều người."
+  },
+  {
+    "id": 2,
+    "title": "Fisherman to Freelancer",
+    "subtitle": "Coastal village",
+    "image": "/images/stories/fishermen.jpg",
+    "imageAlt": "Fisherman story",
+    "gradient": "from-cyan-100 to-blue-100",
+    "badgeGradient": "from-cyan-500 to-blue-500",
+    "icon": "Brain",
+    "iconColor": "text-cyan-600",
+    "story": "Quê tôi miền biển, có gia đình cạnh nhà làm nghề chài lưới. Bữa đi kéo lưới, thấy gì nặng nặng tưởng được mẻ cá to, ai ngờ toàn sách là sách. Nào là 'Lập trình căn bản', 'Machine Learning', 'Deep Learning', 'AI'... A định vất đi nhưng nhà mấy đời ko biết mặt chữ là gì nên quyết tâm cầm về gối đầu giường. Ban ngày a đi học bổ túc văn hóa ban đêm phổ cập con chữ rồi lên Quizzly luyện tập. Ấy thế mà bẵng đi 6 tháng tôi từ thủ đô về thăm A khoe giờ ở nhà làm freelancer cho cty gì ở Mỹ ấy, to lắm, lương net hơn 400 triệu."
+  },
+  {
+    "id": 3,
+    "title": "From Coffee Shop to Data Science",
+    "subtitle": "Late 20s career change",
+    "image": "/images/stories/locfuho.jpg",
+    "imageAlt": "Coffee shop worker story",
+    "gradient": "from-amber-100 to-orange-100",
+    "badgeGradient": "from-amber-500 to-orange-500",
+    "icon": "Zap",
+    "iconColor": "text-amber-600",
+    "story": "Gần nhà mình có ông tầm gần 37, bảo làm phụ hộ mệt quá, thế là xuống tp học 1 khóa lập trình pithon dip learning gì đó, xong rồi làm 300 bài quizz trên Quizzly luyện tập. Bữa mới nói chuyện lại thấy kể mới làm 1 năm mua căn nhà 7 tầng view Tây Hồ!"
+  }
+
+]
+

@@ -21,6 +21,7 @@ A modern, production-ready Next.js application built with TypeScript, shadcn/ui,
 ### Installation
 
 1. Install dependencies:
+
 ```bash
 npm install
 # or
@@ -30,6 +31,7 @@ pnpm install
 ```
 
 2. Set up environment variables:
+
 ```bash
 # On Windows (PowerShell)
 Copy-Item .env.example .env
@@ -45,6 +47,7 @@ cp .env.example .env
    See `ENV_SETUP.md` for detailed environment variable documentation.
 
 4. Run the development server:
+
 ```bash
 npm run dev
 # or
@@ -105,6 +108,7 @@ npx shadcn-ui@latest add [component-name]
 ```
 
 Example:
+
 ```bash
 npx shadcn-ui@latest add card
 npx shadcn-ui@latest add input
@@ -139,4 +143,3 @@ function MyComponent() {
 ## License
 
 ISC
-

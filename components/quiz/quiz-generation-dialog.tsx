@@ -18,10 +18,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Wand2, Loader2, Check, X, AlertCircle, Clock, Lightbulb, Rocket, SparkleIcon, Sparkles } from "lucide-react"
+import {
+  Wand2,
+  Loader2,
+  Check,
+  X,
+  AlertCircle,
+  Clock,
+  Lightbulb,
+  Rocket,
+  SparkleIcon,
+  Sparkles,
+} from "lucide-react"
 import { API_ENDPOINTS } from "@/lib/constants"
 import { Difficulty, QuizType } from "@/types/prisma"
 import { useAuth } from "@/hooks/use-auth"
+import { useMutation } from "@/hooks/use-mutation"
 
 interface QuizGenerationDialogProps {
   open: boolean
@@ -60,14 +72,16 @@ export function QuizGenerationDialog({
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [selectedSuggestion, setSelectedSuggestion] = useState<string>("")
   const [isTypingManually, setIsTypingManually] = useState(false)
-  const [difficulty, setDifficulty] = useState<Difficulty>(Difficulty.INTERMEDIATE)
+  const [difficulty, setDifficulty] = useState<Difficulty>(
+    Difficulty.INTERMEDIATE
+  )
   const [quizType, setQuizType] = useState<QuizType>(QuizType.MULTIPLE_CHOICE)
-  const [timerOption, setTimerOption] = useState<"15" | "30" | "custom">("30")
+  const [timerOption, setTimerOption] = useState<
+    "5" | "10" | "15" | "30" | "custom" | "none"
+  >("15")
   const [customTimerMinutes, setCustomTimerMinutes] = useState<string>("")
-  const [questionCount, setQuestionCount] = useState<number>(5)
+  const [questionCount, setQuestionCount] = useState<number>(10)
   const [isValidating, setIsValidating] = useState(false)
-  const [isSuggesting, setIsSuggesting] = useState(false)
-  const [isCreating, setIsCreating] = useState(false)
   const [validationResult, setValidationResult] = useState<{
     isValid: boolean
     message?: string
@@ -85,125 +99,101 @@ export function QuizGenerationDialog({
     }
   }, [])
 
-  const handleSuggest = useCallback(async (input: string) => {
-    if (!input.trim()) return
+  const { mutate: createQuiz, isLoading: isCreatingQuiz } = useMutation<QuizCreateResponse>("post", {
+    onSuccess: (data) => {
+      onOpenChange(false)
 
-    setIsSuggesting(true)
-    setError(null)
+      setTimeout(() => {
+        const quizId = data.quiz?.id || (data as any).id
+        if (quizId) {
+          router.push(`/quizzes/${quizId}`)
+        } else {
+          setError("Quiz created but ID not found in response")
+        }
+      }, 100)
+    },
+    onError: (error) => {
+      console.error("Create quiz error:", error)
+      setError(error.message || "Failed to create quiz")
+    },
+  })
 
-    try {
-      const authToken = getAuthToken()
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
-      const backendUrl = `${apiUrl}${API_ENDPOINTS.QUIZ.SUGGEST_TOPIC}`
 
-      const headers: HeadersInit = {
-        "Content-Type": "application/json",
-      }
-
-      if (authToken) {
-        headers.Authorization = `Bearer ${authToken}`
-      }
-
-      const response = await fetch(backendUrl, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ userTopic: input.trim() }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({
-          error: "Failed to get suggestions",
-        }))
-        throw new Error(errorData.error || errorData.message || "Failed to get suggestions")
-      }
-
-      const data: QuizSuggestResponse = await response.json()
-    
-      let topics = data.topics || []
-      
-      if (topics.length === 1 && typeof topics[0] === "string" && topics[0].includes(",")) {
-        topics = topics[0]
+  const {mutate: suggestQuiz, isLoading: isSuggestingQuiz} = useMutation<QuizSuggestResponse>("post", {
+    onSuccess: (data) => {
+      if (
+        data.topics.length === 1 &&
+        typeof data.topics[0] === "string" &&
+        data.topics[0].includes(",")
+      ) {
+        const topics = data.topics[0]
           .split(",")
-          .map((topic) => topic.trim())
-          .filter((topic) => topic.length > 0)
+          .map((topic: string) => topic.trim())
+          .filter((topic: string) => topic.length > 0)
+        setSuggestions(topics)
+      } else {
+        setSuggestions(data.topics)
       }
-      
-      setSuggestions(topics)
-    } catch (err) {
-      console.error("Suggest error:", err)
-      setError(err instanceof Error ? err.message : "Failed to get suggestions")
-    } finally {
-      setIsSuggesting(false)
-    }
-  }, [getAuthToken])
+    },
+    onError: (error) => {
+      console.error("Suggest quiz error:", error)
+      setError(error.message || "Failed to get suggestions")
+    },
+  })
 
-  const handleValidate = useCallback(async (input: string) => {
-    if (!input.trim()) {
-      setValidationResult(null)
-      return
-    }
-
-    setIsValidating(true)
-
-    try {
-      const authToken = getAuthToken()
-      const apiUrl = "http://localhost:3001"
-      const backendUrl = `${apiUrl}${API_ENDPOINTS.QUIZ.VALIDATE_TOPIC}`
-
-      const headers: HeadersInit = {
-        "Content-Type": "application/json",
-      }
-
-      if (authToken) {
-        headers.Authorization = `Bearer ${authToken}`
-      }
-
-      const response = await fetch(backendUrl, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ name: input.trim() }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({
-          error: "Failed to validate",
-        }))
-        throw new Error(errorData.error || errorData.message || "Failed to validate")
-      }
-
-      const data: QuizValidateResponse = await response.json()
+  const {mutate: validateQuiz, isLoading: isValidatingQuiz} = useMutation<QuizValidateResponse>("post", {
+    onSuccess: (data) => {
       setValidationResult({
         isValid: data.isValid,
         message: data.message,
       })
-    } catch (err) {
-      console.error("Validate error:", err)
+      setIsValidating(false)
+    },
+    onError: (error) => {
       setValidationResult({
         isValid: false,
-        message: err instanceof Error ? err.message : "Validation failed",
+        message: error.message || "Failed to validate quiz",
       })
-    } finally {
       setIsValidating(false)
-    }
-  }, [getAuthToken])
+    },
+  })
 
-  // Auto-suggest when dialog opens
+  const handleValidate = useCallback(
+    async (input: string) => {
+      if (!input.trim()) {
+        setValidationResult(null)
+        return
+      }
+
+      setIsValidating(true)
+
+      validateQuiz(API_ENDPOINTS.QUIZ.VALIDATE_TOPIC, {
+          method: "POST",
+          name: input.trim(),
+        })
+     
+    },
+    [validateQuiz]
+  )
+
   useEffect(() => {
     if (open && topicName) {
-      // Reset state when dialog opens
       setQuizName("")
       setSelectedSuggestion("")
       setSuggestions([])
       setValidationResult(null)
-      setError(null) // Clear any previous errors
+      setError(null) 
       setIsTypingManually(false)
-      // Call suggest endpoint
-      handleSuggest(topicName)
+      if (topicName.trim()) {
+        setError(null)
+        suggestQuiz(API_ENDPOINTS.QUIZ.SUGGEST_TOPIC, {
+          userTopic: topicName.trim(),
+        })
+      }
     }
-  }, [open, topicName, handleSuggest])
+  }, [open, topicName])
 
-  // Auto-validate as user types manually (debounced)
-  // Only validate if user is typing manually, not when selecting a suggestion
+ 
   useEffect(() => {
     if (!isTypingManually || !quizName.trim()) {
       if (!quizName.trim()) {
@@ -214,28 +204,29 @@ export function QuizGenerationDialog({
 
     const timeoutId = setTimeout(() => {
       handleValidate(quizName.trim())
-    }, 500) // Debounce for 500ms
+    }, 500) 
 
     return () => clearTimeout(timeoutId)
-  }, [quizName, isTypingManually, handleValidate])
+  }, [quizName, isTypingManually])
 
   const handleSelectSuggestion = (suggestion: string) => {
     setSelectedSuggestion(suggestion)
     setQuizName(suggestion)
-    setIsTypingManually(false) // Mark as not typing manually
-    // Validate immediately when suggestion is selected
+    setIsTypingManually(false)
     handleValidate(suggestion)
   }
 
-  // Convert timer to milliseconds
-  const getTimerInMilliseconds = (): number => {
+  const getTimerInMilliseconds = (): number | null => {
+    if (timerOption === "none") {
+      return null
+    }
     let minutes: number
     if (timerOption === "custom") {
       minutes = parseInt(customTimerMinutes) || 0
     } else {
       minutes = parseInt(timerOption)
     }
-    return minutes * 60 * 1000 // Convert minutes to milliseconds
+    return minutes * 60 * 1000
   }
 
   const handleCreate = async () => {
@@ -251,83 +242,35 @@ export function QuizGenerationDialog({
     }
 
     const timerMs = getTimerInMilliseconds()
-    if (timerMs <= 0) {
+    if (timerMs !== null && timerMs <= 0) {
       setError("Please set a valid timer")
       return
     }
 
-    setIsCreating(true)
     setError(null)
 
+    const payload: any = {
+      title: finalQuizName,
+      difficulty: difficulty,
+      quizType: quizType,
+      topicId: topicId,
+      userId: user.id,
+      questionCount: questionCount,
+      topic: topicName,
+    }
+
+    if (timerMs !== null) {
+      payload.timer = timerMs
+    }
+
     try {
-      const authToken = getAuthToken()
-      const apiUrl = "http://localhost:3001"
-      const backendUrl = `${apiUrl}${API_ENDPOINTS.QUIZ.CREATE}`
-
-      const headers: HeadersInit = {
-        "Content-Type": "application/json",
-      }
-
-      if (authToken) {
-        headers.Authorization = `Bearer ${authToken}`
-      }
-
-      const response = await fetch(backendUrl, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          topic: finalQuizName,
-          difficulty: difficulty,
-          quizType: quizType,
-          timer: timerMs,
-          topicId: topicId,
-          userId: user.id,
-          questionCount: questionCount,
-        }),
-      })
-
-      // Read response once
-      const responseText = await response.text()
-
-      if (!response.ok) {
-        let errorData
-        try {
-          errorData = JSON.parse(responseText)
-        } catch {
-          errorData = { error: responseText || "Failed to create quiz" }
-        }
-        throw new Error(errorData.error || errorData.message || "Failed to create quiz")
-      }
-
-      let data: QuizCreateResponse
-      try {
-        data = JSON.parse(responseText)
-      } catch (parseError) {
-        console.error("Failed to parse quiz creation response:", parseError, "Response:", responseText)
-        throw new Error("Invalid response format from server")
-      }
-
-      console.log("Quiz created successfully:", data)
-      
-      onOpenChange(false)
-      
-      setTimeout(() => {
-        const quizId = data.quiz?.id || (data as any).id
-        if (quizId) {
-          console.log("Navigating to quiz:", quizId)
-          router.push(`/quizzes/${quizId}`)
-        } else {
-          setError("Quiz created but ID not found in response")
-        }
-      }, 100)
+      await createQuiz(API_ENDPOINTS.QUIZ.CREATE, payload)
     } catch (err) {
       console.error("Create quiz error:", err)
-      setError(err instanceof Error ? err.message : "Failed to create quiz")
-    } finally {
-      setIsCreating(false)
     }
   }
 
+  console.log(quizName)
   const handleClose = () => {
     onOpenChange(false)
     setQuizName("")
@@ -338,9 +281,9 @@ export function QuizGenerationDialog({
     setIsTypingManually(false)
     setDifficulty(Difficulty.INTERMEDIATE)
     setQuizType(QuizType.MULTIPLE_CHOICE)
-    setTimerOption("30")
+    setTimerOption("15")
     setCustomTimerMinutes("")
-    setQuestionCount(5)
+    setQuestionCount(15)
   }
 
   return (
@@ -352,14 +295,18 @@ export function QuizGenerationDialog({
             Generate Quiz
           </DialogTitle>
           <DialogDescription>
-            Create a quiz based on &quot;{topicName}&quot;. Enter a specific quiz topic or select from suggestions.
+            Create a quiz based on &quot;{topicName}&quot;. Enter a specific
+            quiz topic or select from suggestions.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
           {/* Input Section */}
           <div className="space-y-2">
-            <label htmlFor="quiz-name" className="text-sm font-medium text-gray-700">
+            <label
+              htmlFor="quiz-name"
+              className="text-sm font-medium text-gray-700"
+            >
               Quiz Topic
             </label>
             <input
@@ -375,7 +322,6 @@ export function QuizGenerationDialog({
               className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
 
-            {/* Validation Status */}
             {quizName.trim() && (
               <div className="flex items-center gap-2 text-sm">
                 {isValidating ? (
@@ -388,13 +334,16 @@ export function QuizGenerationDialog({
                     {validationResult.isValid ? (
                       <>
                         <Check className="h-4 w-4 text-green-600" />
-                        <span className="text-green-600">Topic is specific enough</span>
+                        <span className="text-green-600">
+                          Topic is specific enough
+                        </span>
                       </>
                     ) : (
                       <>
                         <AlertCircle className="h-4 w-4 text-amber-600" />
                         <span className="text-amber-600">
-                          {validationResult.message || "Topic needs to be more specific"}
+                          {validationResult.message ||
+                            "Topic needs to be more specific"}
                         </span>
                       </>
                     )}
@@ -409,8 +358,10 @@ export function QuizGenerationDialog({
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Lightbulb className="h-4 w-4 text-blue-600" />
-                <h3 className="text-sm font-medium text-gray-900">Suggested Topics</h3>
-                {isSuggesting && (
+                <h3 className="text-sm font-medium text-gray-900">
+                  Suggested Topics
+                </h3>
+                {isSuggestingQuiz && (
                   <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
                 )}
               </div>
@@ -436,13 +387,18 @@ export function QuizGenerationDialog({
           )}
 
           {/* Quiz Configuration Section */}
-          <div className="space-y-4 pt-4 border-t">
-            <h3 className="text-sm font-medium text-gray-900">Quiz Configuration</h3>
-            
+          <div className="space-y-4 border-t pt-4">
+            <h3 className="text-sm font-medium text-gray-900">
+              Quiz Configuration
+            </h3>
+
             <div className="grid grid-cols-2 gap-4">
               {/* Difficulty */}
               <div className="space-y-2">
-                <label htmlFor="difficulty" className="text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="difficulty"
+                  className="text-sm font-medium text-gray-700"
+                >
                   Difficulty
                 </label>
                 <Select
@@ -453,16 +409,25 @@ export function QuizGenerationDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={Difficulty.BEGINNER}>Beginner</SelectItem>
-                    <SelectItem value={Difficulty.INTERMEDIATE}>Intermediate</SelectItem>
-                    <SelectItem value={Difficulty.ADVANCED}>Advanced</SelectItem>
+                    <SelectItem value={Difficulty.BEGINNER}>
+                      Beginner
+                    </SelectItem>
+                    <SelectItem value={Difficulty.INTERMEDIATE}>
+                      Intermediate
+                    </SelectItem>
+                    <SelectItem value={Difficulty.ADVANCED}>
+                      Advanced
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               {/* Quiz Type */}
               <div className="space-y-2">
-                <label htmlFor="quiz-type" className="text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="quiz-type"
+                  className="text-sm font-medium text-gray-700"
+                >
                   Quiz Type
                 </label>
                 <Select
@@ -473,9 +438,15 @@ export function QuizGenerationDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={QuizType.MULTIPLE_CHOICE}>Multiple Choice</SelectItem>
-                    <SelectItem disabled={true} value={QuizType.TRUE_FALSE}>True/False</SelectItem>
-                    <SelectItem disabled={true} value={QuizType.SHORT_ANSWER}>Short Answer</SelectItem>
+                    <SelectItem value={QuizType.MULTIPLE_CHOICE}>
+                      Multiple Choice
+                    </SelectItem>
+                    <SelectItem disabled={true} value={QuizType.TRUE_FALSE}>
+                      True/False
+                    </SelectItem>
+                    <SelectItem disabled={true} value={QuizType.SHORT_ANSWER}>
+                      Short Answer
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -483,7 +454,7 @@ export function QuizGenerationDialog({
 
             {/* Timer */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                 <Clock className="h-4 w-4" />
                 Timer
               </label>
@@ -491,7 +462,7 @@ export function QuizGenerationDialog({
                 <Select
                   value={timerOption}
                   onValueChange={(value) => {
-                    setTimerOption(value as "15" | "30" | "custom")
+                    setTimerOption(value as "15" | "30" | "custom" | "none")
                     if (value !== "custom") {
                       setCustomTimerMinutes("")
                     }
@@ -501,9 +472,12 @@ export function QuizGenerationDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="5">5 minutes</SelectItem>
+                    <SelectItem value="10">10 minutes</SelectItem>
                     <SelectItem value="15">15 minutes</SelectItem>
                     <SelectItem value="30">30 minutes</SelectItem>
                     <SelectItem value="custom">Custom</SelectItem>
+                    <SelectItem value="none">No timer</SelectItem>
                   </SelectContent>
                 </Select>
                 {timerOption === "custom" && (
@@ -517,21 +491,30 @@ export function QuizGenerationDialog({
                   />
                 )}
               </div>
-              {timerOption !== "custom" && (
+              {timerOption === "none" && (
+                <p className="text-xs text-gray-500">
+                  Quiz can be created without a timer. Timer can be set later.
+                </p>
+              )}
+              {timerOption !== "custom" && timerOption !== "none" && (
                 <p className="text-xs text-gray-500">
                   {timerOption} minutes ({parseInt(timerOption) * 60 * 1000}ms)
                 </p>
               )}
               {timerOption === "custom" && customTimerMinutes && (
                 <p className="text-xs text-gray-500">
-                  {customTimerMinutes} minutes ({parseInt(customTimerMinutes) * 60 * 1000}ms)
+                  {customTimerMinutes} minutes (
+                  {parseInt(customTimerMinutes) * 60 * 1000}ms)
                 </p>
               )}
             </div>
 
             {/* Question Count */}
             <div className="space-y-2">
-              <label htmlFor="question-count" className="text-sm font-medium text-gray-700">
+              <label
+                htmlFor="question-count"
+                className="text-sm font-medium text-gray-700"
+              >
                 Number of Questions
               </label>
               <input
@@ -540,7 +523,7 @@ export function QuizGenerationDialog({
                 min="1"
                 max="50"
                 value={questionCount}
-                onChange={(e) => setQuestionCount(parseInt(e.target.value) || 5)}
+                onChange={(e) => setQuestionCount(parseInt(e.target.value))}
                 className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -548,28 +531,29 @@ export function QuizGenerationDialog({
 
           {/* Error Message */}
           {error && (
-            <div className="rounded-lg bg-red-50 border border-red-200 p-3">
+            <div className="rounded-lg border border-red-200 bg-red-50 p-3">
               <p className="text-sm text-red-600">{error}</p>
             </div>
           )}
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose} disabled={isCreating}>
+          <Button variant="outline" onClick={handleClose} disabled={isCreatingQuiz}>
             Cancel
           </Button>
           <Button
             onClick={handleCreate}
             disabled={
               !quizName.trim() ||
-              isCreating ||
+              isCreatingQuiz ||
               (validationResult ? !validationResult.isValid : false) ||
-              getTimerInMilliseconds() <= 0 ||
+              (getTimerInMilliseconds() !== null &&
+                getTimerInMilliseconds()! <= 0) ||
               questionCount < 1
             }
             size="lg"
           >
-            {isCreating ? (
+            {isCreatingQuiz ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Creating...
@@ -586,4 +570,3 @@ export function QuizGenerationDialog({
     </Dialog>
   )
 }
-

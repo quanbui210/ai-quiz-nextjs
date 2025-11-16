@@ -6,7 +6,7 @@ import { Providers } from "@/components/providers"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "LearnAI - AI-Powered Quiz Learning Platform",
+  title: "Quizzly - AI-Powered Quiz Learning Platform",
   description: "Create and take AI-generated quizzes to master any topic",
 }
 
@@ -23,4 +23,3 @@ export default function RootLayout({
     </html>
   )
 }
-

@@ -5,9 +5,16 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Button } from "@/components/ui/button"
-import { MessageSquare, Plus, TrendingUp, TrendingDown, BookOpen } from "lucide-react"
+import {
+  MessageSquare,
+  Plus,
+  TrendingUp,
+  TrendingDown,
+  BookOpen,
+} from "lucide-react"
 import { API_ENDPOINTS } from "@/lib/constants"
 import { AnalyticsResponse } from "@/types/api"
+import { useAPI } from "@/hooks/use-api"
 import {
   LineChart,
   Line,
@@ -24,21 +31,41 @@ type TimeRange = "last7Days" | "last30Days" | "last90Days"
 export default function DashboardPage() {
   const router = useRouter()
   const { user, isAuthenticated, isLoading } = useAuth()
-  const [analytics, setAnalytics] = useState<AnalyticsResponse | null>(null)
-  const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(true)
   const [timeRange, setTimeRange] = useState<TimeRange>("last7Days")
-  const [error, setError] = useState<string | null>(null)
   const [displayName, setDisplayName] = useState<string>("User")
+
+  const { data: analyticsData, isLoading: isLoadingAnalytics, error: analyticsError } = useAPI<AnalyticsResponse | { analytics?: AnalyticsResponse; data?: AnalyticsResponse }>(
+    isAuthenticated ? API_ENDPOINTS.ANALYTICS.ME : null,
+    {
+      revalidateOnFocus: false,
+      shouldRetryOnError: false,
+    }
+  )
+
+  const analytics: AnalyticsResponse | null = analyticsData
+    ? (analyticsData as any).analytics ||
+      (analyticsData as any).data ||
+      (analyticsData as AnalyticsResponse)
+    : null
+  const error = analyticsError ? (analyticsError as Error).message : null
+
+  useEffect(() => {
+    if (analyticsData) {
+      console.log("Analytics raw data:", analyticsData)
+      console.log("Analytics parsed:", analytics)
+    }
+  }, [analyticsData, analytics])
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storedUser = localStorage.getItem("auth-storage")
       const parsedUser = storedUser ? JSON.parse(storedUser) : null
       const userData = parsedUser?.state?.session?.user || null
-      
-      const name = userData?.user_metadata?.name || 
-                   userData?.user_metadata?.full_name || 
-                   "User"
+
+      const name =
+        userData?.user_metadata?.name ||
+        userData?.user_metadata?.full_name ||
+        "User"
       setDisplayName(name)
     }
   }, [])
@@ -49,77 +76,11 @@ export default function DashboardPage() {
     }
   }, [isAuthenticated, isLoading, router])
 
-  useEffect(() => {
-    if (!isAuthenticated) return
-
-    const fetchAnalytics = async () => {
-      setIsLoadingAnalytics(true)
-      setError(null)
-
-      try {
-        const authData = localStorage.getItem("auth-storage")
-        let authToken: string | null = null
-        if (authData) {
-          try {
-            const parsed = JSON.parse(authData)
-            authToken = parsed?.state?.session?.access_token || null
-          } catch {
-            // Ignore parse errors
-          }
-        }
-
-        const apiUrl = "http://localhost:3001"
-        const backendUrl = `${apiUrl}${API_ENDPOINTS.ANALYTICS.ME}`
-
-        const headers: HeadersInit = {
-          "Content-Type": "application/json",
-        }
-
-        if (authToken) {
-          headers.Authorization = `Bearer ${authToken}`
-        }
-
-        const response = await fetch(backendUrl, {
-          method: "GET",
-          headers,
-        })
-
-        if (!response.ok) {
-          const responseText = await response.text()
-          let errorData
-          try {
-            errorData = JSON.parse(responseText)
-          } catch {
-            errorData = { error: responseText || "Failed to get analytics" }
-          }
-          throw new Error(
-            errorData.error ||
-              errorData.details ||
-              errorData.message ||
-              `Failed to get analytics (${response.status})`
-          )
-        }
-
-        const responseData = await response.json()
-        const data: AnalyticsResponse = (responseData as any).analytics || (responseData as any).data || responseData
-        console.log("Analytics data:", data)
-        setAnalytics(data)
-      } catch (err) {
-        console.error("Failed to fetch analytics:", err)
-        setError(err instanceof Error ? err.message : "Failed to load analytics")
-      } finally {
-        setIsLoadingAnalytics(false)
-      }
-    }
-
-    fetchAnalytics()
-  }, [isAuthenticated])
-
   if (isLoading || !isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600"></div>
           <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
@@ -130,24 +91,30 @@ export default function DashboardPage() {
     const isPositive = change >= 0
     const sign = isPositive ? "+" : ""
     const Icon = isPositive ? TrendingUp : TrendingDown
+    const roundedChange = Math.round(change * 10) / 10 // Round to 1 decimal place
     return (
-      <span className={`flex items-center gap-1 ${isPositive ? "text-green-600" : "text-red-600"}`}>
+      <span
+        className={`flex items-center gap-1 ${isPositive ? "text-green-600" : "text-red-600"}`}
+      >
         <Icon className="h-4 w-4" />
         {sign}
-        {change}
+        {roundedChange}
         {change === 0 ? "" : " this week"}
       </span>
     )
   }
 
   const formatTime = (seconds: number) => {
-    if (seconds < 60) {
-      return `${seconds}s`
+    const roundedSeconds = Math.round(seconds)
+    if (roundedSeconds < 60) {
+      return `${roundedSeconds}s`
     }
-    const minutes = Math.floor(seconds / 60)
-    const remainingSeconds = seconds % 60
+    const minutes = Math.floor(roundedSeconds / 60)
+    const remainingSeconds = roundedSeconds % 60
     if (minutes < 60) {
-      return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`
+      return remainingSeconds > 0
+        ? `${minutes}m ${remainingSeconds}s`
+        : `${minutes}m`
     }
     const hours = Math.floor(minutes / 60)
     const remainingMinutes = minutes % 60
@@ -172,15 +139,15 @@ export default function DashboardPage() {
     if (!data || !Array.isArray(data)) {
       return []
     }
-    
+
     const mapped = data.map((item) => ({
       date: formatDate(item.date),
       score: item.averageScore ?? 0,
       attempts: item.attemptCount,
     }))
-    
+
     const hasAnyScores = mapped.some((item) => item.score > 0)
-    
+
     return mapped
   }
 
@@ -197,13 +164,18 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="flex gap-3">
-            <Button disabled variant="outline" size="lg" onClick={() => router.push("/ai-tutor")}>
+            <Button
+              disabled
+              variant="outline"
+              size="lg"
+              onClick={() => router.push("/ai-tutor")}
+            >
               <MessageSquare className="mr-2 h-5 w-5" />
               Chat with AI Tutor
             </Button>
             <Button size="lg" onClick={() => router.push("/topics/new")}>
               <Plus className="mr-2 h-5 w-5" />
-              Start New Quiz
+              Start New Topic
             </Button>
           </div>
         </div>
@@ -211,15 +183,15 @@ export default function DashboardPage() {
         {isLoadingAnalytics ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
               <p className="mt-4 text-gray-600">Loading analytics...</p>
             </div>
           </div>
         ) : error ? (
-          <div className="rounded-lg bg-red-50 p-4 border border-red-200">
+          <div className="rounded-lg border border-red-200 bg-red-50 p-4">
             <p className="text-red-600">{error}</p>
           </div>
-        ) : analytics ? (
+        ) : analyticsData ? (
           <>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
               <div className="rounded-lg bg-white p-6 shadow-sm">
@@ -282,15 +254,21 @@ export default function DashboardPage() {
             {analytics?.time && (
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="rounded-lg bg-white p-6 shadow-sm">
-                  <p className="text-sm font-medium text-gray-600">Total Time Spent</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    Total Time Spent
+                  </p>
                   <p className="mt-2 text-2xl font-bold text-gray-900">
                     {formatTime(analytics.time.totalTimeSpent)}
                   </p>
-                  <p className="mt-1 text-xs text-gray-500">Across all quizzes</p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Across all quizzes
+                  </p>
                 </div>
 
                 <div className="rounded-lg bg-white p-6 shadow-sm">
-                  <p className="text-sm font-medium text-gray-600">Average Time Spent</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    Average Time Spent
+                  </p>
                   <p className="mt-2 text-2xl font-bold text-gray-900">
                     {formatTime(analytics.time.averageTimeSpent)}
                   </p>
@@ -298,15 +276,21 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="rounded-lg bg-white p-6 shadow-sm">
-                  <p className="text-sm font-medium text-gray-600">Total Time Allocated</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    Total Time Allocated
+                  </p>
                   <p className="mt-2 text-2xl font-bold text-gray-900">
                     {formatTimeFromMs(analytics.time.totalTimeSet)}
                   </p>
-                  <p className="mt-1 text-xs text-gray-500">Time set for quizzes</p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Time set for quizzes
+                  </p>
                 </div>
 
                 <div className="rounded-lg bg-white p-6 shadow-sm">
-                  <p className="text-sm font-medium text-gray-600">Time Efficiency</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    Time Efficiency
+                  </p>
                   <p className="mt-2 text-2xl font-bold text-gray-900">
                     {analytics.time.timeEfficiency > 0
                       ? `${Math.round(analytics.time.timeEfficiency)}%`
@@ -323,15 +307,15 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               <div className="rounded-lg bg-white p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
+                <div className="mb-4 flex items-center justify-between">
                   <h2 className="text-xl font-semibold text-gray-900">
                     Your Performance Over Time
                   </h2>
                 </div>
-                <div className="flex gap-2 mb-4">
+                <div className="mb-4 flex gap-2">
                   <button
                     onClick={() => setTimeRange("last7Days")}
-                    className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                    className={`rounded-md px-3 py-1 text-sm font-medium transition-colors ${
                       timeRange === "last7Days"
                         ? "bg-blue-100 text-blue-700"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -341,7 +325,7 @@ export default function DashboardPage() {
                   </button>
                   <button
                     onClick={() => setTimeRange("last30Days")}
-                    className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                    className={`rounded-md px-3 py-1 text-sm font-medium transition-colors ${
                       timeRange === "last30Days"
                         ? "bg-blue-100 text-blue-700"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -351,7 +335,7 @@ export default function DashboardPage() {
                   </button>
                   <button
                     onClick={() => setTimeRange("last90Days")}
-                    className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                    className={`rounded-md px-3 py-1 text-sm font-medium transition-colors ${
                       timeRange === "last90Days"
                         ? "bg-blue-100 text-blue-700"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -363,24 +347,29 @@ export default function DashboardPage() {
                 {(() => {
                   const chartData = getTimeSeriesData()
                   const hasAnyScores = chartData.some((item) => item.score > 0)
-                  
+
                   if (chartData.length === 0) {
                     return (
-                      <div className="flex items-center justify-center h-[300px] text-gray-500">
+                      <div className="flex h-[300px] items-center justify-center text-gray-500">
                         No data available for this period
                       </div>
                     )
                   }
-                  
+
                   if (!hasAnyScores) {
                     return (
-                      <div className="flex flex-col items-center justify-center h-[300px] text-gray-500">
-                        <p className="text-lg font-medium mb-2">No quiz attempts yet</p>
-                        <p className="text-sm">Start taking quizzes to see your performance over time!</p>
+                      <div className="flex h-[300px] flex-col items-center justify-center text-gray-500">
+                        <p className="mb-2 text-lg font-medium">
+                          No quiz attempts yet
+                        </p>
+                        <p className="text-sm">
+                          Start taking quizzes to see your performance over
+                          time!
+                        </p>
                       </div>
                     )
                   }
-                  
+
                   return (
                     <ResponsiveContainer width="100%" height={300}>
                       <LineChart data={chartData}>
@@ -394,10 +383,17 @@ export default function DashboardPage() {
                           domain={[0, 100]}
                           stroke="#6b7280"
                           style={{ fontSize: "12px" }}
-                          label={{ value: "Score %", angle: -90, position: "insideLeft" }}
+                          label={{
+                            value: "Score %",
+                            angle: -90,
+                            position: "insideLeft",
+                          }}
                         />
                         <Tooltip
-                          formatter={(value: number) => [`${Math.round(value)}%`, "Average Score"]}
+                          formatter={(value: number) => [
+                            `${Math.round(value)}%`,
+                            "Average Score",
+                          ]}
                           labelStyle={{ color: "#374151" }}
                           contentStyle={{
                             backgroundColor: "#fff",
@@ -420,53 +416,82 @@ export default function DashboardPage() {
               </div>
 
               <div className="rounded-lg bg-white p-6 shadow-sm">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                  Topics Overview
-                </h2>
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Topics Overview
+                  </h2>
+                </div>
                 <div className="space-y-4">
-                {!analytics?.topics || analytics.topics.length === 0 ? (
-                  <p className="text-gray-500 text-center py-8">
-                    No topics yet. Start your first quiz!
-                  </p>
-                ) : (
-                  analytics.topics.slice(0, 4).map((topic) => (
-                    <div
-                      key={topic.topicId}
-                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <BookOpen className="h-4 w-4 text-blue-600" />
-                          <h3 className="font-medium text-gray-900">
-                            {topic.topicName}
-                          </h3>
+                  {!analytics?.topics || analytics.topics.length === 0 ? (
+                    <p className="py-8 text-center text-gray-500">
+                      No topics yet. Start your first quiz!
+                    </p>
+                  ) : (
+                    <>
+                      {[...analytics.topics]
+                        .sort((a, b) => {
+                          // Sort by most recent: null lastAttemptAt (newly created) first,
+                          // then by lastAttemptAt descending (most recent first)
+                          if (a.lastAttemptAt === null && b.lastAttemptAt === null) return 0
+                          if (a.lastAttemptAt === null) return -1
+                          if (b.lastAttemptAt === null) return 1
+                          return (
+                            new Date(b.lastAttemptAt).getTime() -
+                            new Date(a.lastAttemptAt).getTime()
+                          )
+                        })
+                        .slice(0, 3)
+                        .map((topic) => (
+                        <div
+                          key={topic.topicId}
+                          className="flex items-center justify-between rounded-lg border border-gray-200 p-4"
+                        >
+                          <div className="flex-1">
+                            <div className="mb-2 flex items-center gap-2">
+                              <BookOpen className="h-4 w-4 text-blue-600" />
+                              <h3 className="font-medium text-gray-900">
+                                {topic.topicName}
+                              </h3>
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-gray-600">
+                              <span>
+                                {Math.round(topic.progressPercentage)}% complete
+                              </span>
+                              <span>
+                                {topic.completedQuizzes}/{topic.totalQuizzes}{" "}
+                                quizzes
+                              </span>
+                              <span>Avg: {Math.round(topic.averageScore)}%</span>
+                            </div>
+                            <div className="mt-2 h-2 w-full rounded-full bg-gray-200">
+                              <div
+                                className="h-2 rounded-full bg-blue-600"
+                                style={{ width: `${topic.progressPercentage}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                          <Link href={`/topics/${topic.topicId}`}>
+                            <Button variant="outline" size="sm" className="ml-4">
+                              {topic.progressPercentage === 100
+                                ? "Review"
+                                : topic.progressPercentage > 0
+                                  ? "Continue"
+                                  : "Start Quiz"}
+                            </Button>
+                          </Link>
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
-                          <span>{Math.round(topic.progressPercentage)}% complete</span>
-                          <span>
-                            {topic.completedQuizzes}/{topic.totalQuizzes} quizzes
-                          </span>
-                          <span>Avg: {Math.round(topic.averageScore)}%</span>
+                      ))}
+                      {analytics.topics.length > 3 && (
+                        <div className="pt-2">
+                          <Link href="/topics">
+                            <Button variant="outline" className="w-full">
+                              View All Topics ({analytics.topics.length})
+                            </Button>
+                          </Link>
                         </div>
-                        <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-blue-600 h-2 rounded-full"
-                            style={{ width: `${topic.progressPercentage}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                      <Link href={`/topics/${topic.topicId}`}>
-                        <Button variant="outline" size="sm" className="ml-4">
-                          {topic.progressPercentage === 100
-                            ? "Review"
-                            : topic.progressPercentage > 0
-                            ? "Continue"
-                            : "Start Quiz"}
-                        </Button>
-                      </Link>
-                    </div>
-                  ))
-                )}
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             </div>

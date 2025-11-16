@@ -19,16 +19,24 @@ const sizeClasses = {
   lg: "h-12 w-12 text-base",
 }
 
-export function Avatar({ src, alt, name, email, size = "md", className }: AvatarProps) {
+export function Avatar({
+  src,
+  alt,
+  name,
+  email,
+  size = "md",
+  className,
+}: AvatarProps) {
   const [imageError, setImageError] = useState(false)
   const displayName = name || email || "User"
-  const initial = name?.charAt(0).toUpperCase() || email?.charAt(0).toUpperCase() || "U"
+  const initial =
+    name?.charAt(0).toUpperCase() || email?.charAt(0).toUpperCase() || "U"
 
   if (!src || imageError) {
     return (
       <div
         className={cn(
-          "rounded-full bg-gray-200 flex items-center justify-center font-medium text-gray-600 flex-shrink-0",
+          "flex flex-shrink-0 items-center justify-center rounded-full bg-gray-200 font-medium text-gray-600",
           sizeClasses[size],
           className
         )}
@@ -41,7 +49,7 @@ export function Avatar({ src, alt, name, email, size = "md", className }: Avatar
   return (
     <div
       className={cn(
-        "rounded-full overflow-hidden flex-shrink-0 bg-gray-200",
+        "flex-shrink-0 overflow-hidden rounded-full bg-gray-200",
         sizeClasses[size],
         className
       )}
@@ -58,4 +66,3 @@ export function Avatar({ src, alt, name, email, size = "md", className }: Avatar
     </div>
   )
 }
-

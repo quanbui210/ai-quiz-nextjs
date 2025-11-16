@@ -47,7 +47,9 @@ export function ConfirmDialog({
                 <AlertTriangle className="h-5 w-5 text-red-600" />
               </div>
             )}
-            <DialogTitle className={variant === "destructive" ? "text-red-900" : ""}>
+            <DialogTitle
+              className={variant === "destructive" ? "text-red-900" : ""}
+            >
               {title}
             </DialogTitle>
           </div>
@@ -68,4 +70,3 @@ export function ConfirmDialog({
     </Dialog>
   )
 }
-

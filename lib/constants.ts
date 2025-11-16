@@ -12,6 +12,8 @@ export const API_ENDPOINTS = {
     CREATE: "/api/v1/topic/create",
     GET: (id: string) => `/api/v1/topic/${id}`,
     LIST: "/api/v1/topic/list",
+    UPDATE: (id: string) => `/api/v1/topic/${id}`,
+    DELETE: (id: string) => `/api/v1/topic/${id}`,
   },
   QUIZ: {
     SUGGEST_TOPIC: "/api/v1/quiz/suggest-topic",

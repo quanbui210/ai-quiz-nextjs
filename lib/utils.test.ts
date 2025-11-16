@@ -22,4 +22,3 @@ describe("cn utility", () => {
     expect(cn("foo", undefined, null, "bar")).toBe("foo bar")
   })
 })
-

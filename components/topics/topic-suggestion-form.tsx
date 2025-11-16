@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Wand2, Loader2, Check, X, Lightbulb, Zap } from "lucide-react"
 import { TopicSuggestResponse, TopicCreateResponse } from "@/types/api"
 import { API_ENDPOINTS } from "@/lib/constants"
+import { useMutation } from "@/hooks/use-mutation"
 
 export function TopicSuggestionForm() {
   const router = useRouter()
@@ -15,60 +16,15 @@ export function TopicSuggestionForm() {
   const [isSuggesting, setIsSuggesting] = useState(false)
   const [suggestError, setSuggestError] = useState<string | null>(null)
 
-  const [isCreating, setIsCreating] = useState(false)
+  const { mutate: createTopic, isLoading: isCreating, error: createError } = useMutation<TopicCreateResponse>("post", {
+    onSuccess: (data) => {
+      router.push(`/topics/${data.topic.id}`)
+    },
+    onError: (error) => {
+      setSuggestError(error.message || "Failed to create topic")
+    },
+  })
 
-  const handleSuggest = async () => {
-    if (!userTopic.trim()) {
-      setSuggestError("Please enter a topic")
-      return
-    }
-
-    setIsSuggesting(true)
-    setSuggestError(null)
-
-    try {
-      const authData = localStorage.getItem("auth-storage")
-      let authToken: string | null = null
-      if (authData) {
-        try {
-          const parsed = JSON.parse(authData)
-          authToken = parsed?.state?.session?.access_token || null
-        } catch {
-        }
-      }
-
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
-      const backendUrl = `${apiUrl}${API_ENDPOINTS.TOPIC.SUGGEST}`
-
-      const headers: HeadersInit = {
-        "Content-Type": "application/json",
-      }
-
-      if (authToken) {
-        headers.Authorization = `Bearer ${authToken}`
-      }
-
-      const response = await fetch(backendUrl, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ userTopic: userTopic.trim() }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({
-          error: "Failed to get suggestions",
-        }))
-        throw new Error(errorData.error || errorData.message || "Failed to get suggestions")
-      }
-
-      const data: TopicSuggestResponse = await response.json()
-      setSuggestions(data.topics || [])
-    } catch (error) {
-      setSuggestError(error instanceof Error ? error.message : "Failed to get suggestions")
-    } finally {
-      setIsSuggesting(false)
-    }
-  }
 
   const handleSelectSuggestion = (suggestion: string) => {
     setSelectedTopic(suggestion)
@@ -89,68 +45,27 @@ export function TopicSuggestionForm() {
       return
     }
 
-    setIsCreating(true)
     setSuggestError(null)
 
     try {
-      const authData = localStorage.getItem("auth-storage")
-      let authToken: string | null = null
-      if (authData) {
-        try {
-          const parsed = JSON.parse(authData)
-          authToken = parsed?.state?.session?.access_token || null
-        } catch {
-        }
-      }
-
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
-      const backendUrl = `${apiUrl}${API_ENDPOINTS.TOPIC.CREATE}`
-
-      const requestBody = {
+      await createTopic(API_ENDPOINTS.TOPIC.CREATE, {
         name: topicName,
-      }
-
-      const headers: HeadersInit = {
-        "Content-Type": "application/json",
-      }
-
-      if (authToken) {
-        headers.Authorization = `Bearer ${authToken}`
-      }
-
-      const response = await fetch(backendUrl, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(requestBody),
       })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({
-          error: "Failed to create topic",
-        }))
-        throw new Error(errorData.error || errorData.message || "Failed to create topic")
-      }
-
-      const data: TopicCreateResponse = await response.json()
-      router.push(`/topics/${data.topic.id}`)
     } catch (error) {
       console.error("Failed to create topic:", error)
-      setSuggestError(error instanceof Error ? error.message : "Failed to create topic")
-    } finally {
-      setIsCreating(false)
     }
   }
 
   const finalTopic = selectedTopic || userTopic.trim()
 
   return (
-    <div className="rounded-lg bg-white p-6 shadow-sm space-y-6">
+    <div className="space-y-6 rounded-lg bg-white p-6 shadow-sm">
       {/* Input Section */}
       <div className="space-y-4">
         <div>
           <label
             htmlFor="topic-input"
-            className="block text-sm font-medium text-gray-700 mb-2"
+            className="mb-2 block text-sm font-medium text-gray-700"
           >
             What do you want to learn?
           </label>
@@ -225,15 +140,15 @@ export function TopicSuggestionForm() {
 
       {/* Selected Topic Display */}
       {finalTopic && (
-        <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
-          <p className="text-sm font-medium text-blue-900 mb-1">
+        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <p className="mb-1 text-sm font-medium text-blue-900">
             Selected Topic:
           </p>
           <p className="text-base text-blue-800">{finalTopic}</p>
         </div>
       )}
 
-      <div className="flex justify-end gap-3 pt-4 border-t">
+      <div className="flex justify-end gap-3 border-t pt-4">
         <Button variant="outline" onClick={() => router.back()}>
           Cancel
         </Button>
@@ -255,4 +170,3 @@ export function TopicSuggestionForm() {
     </div>
   )
 }
-

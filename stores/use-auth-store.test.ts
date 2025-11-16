@@ -116,4 +116,3 @@ describe("useAuthStore", () => {
     expect(result.current.isLoading).toBe(false)
   })
 })
-

@@ -14,4 +14,3 @@ export const swrConfig: SWRConfiguration = {
   errorRetryInterval: 5000,
   dedupingInterval: 2000,
 }
-

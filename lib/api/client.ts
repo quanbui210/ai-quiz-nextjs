@@ -42,7 +42,9 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401) {
       if (typeof window !== "undefined") {
         const isDev = process.env.NODE_ENV === "development"
-        const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+        const isLocalhost =
+          window.location.hostname === "localhost" ||
+          window.location.hostname === "127.0.0.1"
 
         if (!isDev || !isLocalhost || error.response) {
           localStorage.removeItem("auth-storage")
@@ -55,4 +57,3 @@ apiClient.interceptors.response.use(
 )
 
 export default apiClient
-

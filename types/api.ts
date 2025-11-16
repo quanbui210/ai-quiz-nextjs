@@ -129,4 +129,3 @@ export interface AnalyticsResponse {
     timeEfficiency: number
   }
 }
-

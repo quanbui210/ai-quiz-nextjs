@@ -13,9 +13,9 @@ export default function CallbackPage() {
   useEffect(() => {
     const handleHashCallback = async (): Promise<void> => {
       try {
-        const hash = window.location.hash.substring(1) // Remove the #
+        const hash = window.location.hash.substring(1) 
         const params = new URLSearchParams(hash)
-        
+
         const accessToken = params.get("access_token")
         const refreshToken = params.get("refresh_token")
         const providerToken = params.get("provider_token")
@@ -33,7 +33,8 @@ export default function CallbackPage() {
           throw new Error("No access token in callback")
         }
 
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
+        const apiUrl =
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
         const response = await fetch(`${apiUrl}/api/v1/auth/callback`, {
           method: "POST",
           headers: {
@@ -51,21 +52,26 @@ export default function CallbackPage() {
         })
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ error: "Unknown error" }))
-          throw new Error(errorData.error || errorData.message || "Failed to process callback")
+          const errorData = await response
+            .json()
+            .catch(() => ({ error: "Unknown error" }))
+          throw new Error(
+            errorData.error || errorData.message || "Failed to process callback"
+          )
         }
 
         const data: AuthLoginResponse = await response.json()
-        
+
         setAuth(data)
-        
+
         router.push("/dashboard")
       } catch (err) {
         console.error("Callback error:", err)
         setError(err instanceof Error ? err.message : "Unknown error")
-        // Redirect to login with error after a short delay
         setTimeout(() => {
-          router.push(`/login?error=${encodeURIComponent(err instanceof Error ? err.message : "callback_failed")}`)
+          router.push(
+            `/login?error=${encodeURIComponent(err instanceof Error ? err.message : "callback_failed")}`
+          )
         }, 2000)
       }
     }
@@ -77,7 +83,7 @@ export default function CallbackPage() {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="text-red-600 mb-4">Error: {error}</div>
+          <div className="mb-4 text-red-600">Error: {error}</div>
           <p className="text-gray-600">Redirecting to login...</p>
         </div>
       </div>
@@ -87,7 +93,7 @@ export default function CallbackPage() {
   return (
     <div className="flex min-h-screen items-center justify-center">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600"></div>
         <p className="mt-4 text-gray-600">Completing sign in...</p>
       </div>
     </div>

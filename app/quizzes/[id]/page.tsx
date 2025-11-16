@@ -8,6 +8,8 @@ import { ArrowLeft, Clock, CheckCircle2, Loader2 } from "lucide-react"
 import { Quiz, Question } from "@/types/prisma"
 import { API_ENDPOINTS } from "@/lib/constants"
 import { useAuth } from "@/hooks/use-auth"
+import { useAPI } from "@/hooks/use-api"
+import { useMutation } from "@/hooks/use-mutation"
 
 interface QuizResponse {
   id: string
@@ -31,104 +33,46 @@ export default function QuizPage() {
   const router = useRouter()
   const { user } = useAuth()
   const quizId = params.id as string
-  const [quiz, setQuiz] = useState<QuizResponse | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
   const [initialTimer, setInitialTimer] = useState<number | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+
+  const { data: quizData, isLoading, error: quizError } = useAPI<{ quiz?: QuizResponse } | QuizResponse>(
+    quizId ? API_ENDPOINTS.QUIZ.GET(quizId) : null
+  )
+
+  const quiz: QuizResponse | null = quizData
+    ? (quizData as any).quiz || (quizData as QuizResponse)
+    : null
+  const error = quizError ? (quizError as Error).message : null
+
   useEffect(() => {
-    if (!quizId) return
-
-    const fetchQuiz = async () => {
-      setIsLoading(true)
-      setError(null)
-
-      try {
-        const authData = localStorage.getItem("auth-storage")
-        let authToken: string | null = null
-        if (authData) {
-          try {
-            const parsed = JSON.parse(authData)
-            authToken = parsed?.state?.session?.access_token || null
-          } catch {
-          }
-        }
-
-        const apiUrl = "http://localhost:3001"
-        const backendUrl = `${apiUrl}${API_ENDPOINTS.QUIZ.GET(quizId)}`
-
-        console.log("Fetching quiz from:", backendUrl)
-        console.log("Auth token present:", !!authToken)
-
-        const headers: HeadersInit = {
-          "Content-Type": "application/json",
-        }
-
-        if (authToken) {
-          headers.Authorization = `Bearer ${authToken}`
-        }
-
-        const response = await fetch(backendUrl, {
-          method: "GET",
-          headers,
-        })
-
-
-        const responseText = await response.text()
-        
-        if (!response.ok) {
-          let errorData
-          try {
-            errorData = JSON.parse(responseText)
-          } catch {
-            errorData = { error: responseText || "Failed to get quiz" }
-          }
-          console.error("Quiz fetch error:", errorData)
-          throw new Error(errorData.error || errorData.details || errorData.message || `Failed to get quiz (${response.status})`)
-        }
-
-        let responseData: { quiz?: QuizResponse } | QuizResponse
-        try {
-          responseData = JSON.parse(responseText)
-        } catch (parseError) {
-          console.error("Failed to parse quiz response:", parseError)
-          throw new Error("Invalid response format from server")
-        }
-        
-        const data: QuizResponse = (responseData as any).quiz || responseData as QuizResponse
-        
-
-        if (data.status === "COMPLETED") {
-          setIsLoading(false)
-          router.push(`/quizzes/${quizId}/results`)
-          return
-        }
-        console.log("data", data)
-        if (!data.questions || !Array.isArray(data.questions) || data.questions.length === 0) {
-          console.warn("Quiz has no questions:", data)
-          setError("This quiz has no questions available. Please try again later.")
-          return
-        }
-        
-        setQuiz(data)
-        
-        if (data.timer) {
-          setInitialTimer(data.timer)
-          setTimeRemaining(data.timer)
-        }
-      } catch (err) {
-        console.error("Failed to fetch quiz:", err)
-        setError(err instanceof Error ? err.message : "Failed to load quiz")
-      } finally {
-        setIsLoading(false)
+    if (quiz) {
+      if (quiz.status === "COMPLETED") {
+        router.push(`/quizzes/${quizId}/results`)
+        return
+      }
+      if (quiz.timer) {
+        setInitialTimer(quiz.timer)
+        setTimeRemaining(quiz.timer)
       }
     }
+  }, [quiz, quizId, router])
 
-    fetchQuiz()
-  }, [quizId, router])
+  const { mutate: submitQuiz, isLoading: isSubmitting } = useMutation(
+    "post",
+    {
+      onSuccess: () => {
+        setTimeout(() => {
+          router.push(`/quizzes/${quizId}/results`)
+        }, 500)
+      },
+      onError: (error) => {
+        alert(error.message || "Failed to submit quiz")
+      },
+    }
+  )
 
   useEffect(() => {
     if (timeRemaining === null || timeRemaining <= 0) return
@@ -166,93 +110,33 @@ export default function QuizPage() {
     }))
   }
 
-  const handleSubmit = async () => {
-    if (!quiz) return
-
-    if (!user?.id) {
-      setError("User not authenticated")
+  const handleSubmit = () => {
+    if (!quiz || !user?.id) {
+      if (!user?.id) {
+        alert("User not authenticated")
+      }
       return
     }
 
-    setIsSubmitting(true)
-
-    try {
-      const authData = localStorage.getItem("auth-storage")
-      let authToken: string | null = null
-      if (authData) {
-        try {
-          const parsed = JSON.parse(authData)
-          authToken = parsed?.state?.session?.access_token || null
-        } catch {
-        }
-      }
-
-      const apiUrl = "http://localhost:3001"
-      const backendUrl = `${apiUrl}/api/v1/quiz/${quizId}/submit`
-
-      const headers: HeadersInit = {
-        "Content-Type": "application/json",
-      }
-
-      if (authToken) {
-        headers.Authorization = `Bearer ${authToken}`
-      }
-
-      const answersArray = Object.entries(answers).map(([questionId, userAnswer]) => ({
+    const answersArray = Object.entries(answers).map(
+      ([questionId, userAnswer]) => ({
         questionId,
         userAnswer,
-      }))
+      })
+    )
 
-   
-      const timeSpentSeconds = initialTimer && timeRemaining !== null
+    const timeSpentSeconds =
+      initialTimer && timeRemaining !== null
         ? Math.round((initialTimer - timeRemaining) / 1000)
         : 0
 
-      const payload = {
-        userId: user.id,
-        answers: answersArray,
-        timeSpent: timeSpentSeconds,
-      }
-
-
-      const response = await fetch(backendUrl, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(payload),
-      })
-
-      const responseText = await response.text()
-
-      if (!response.ok) {
-        let errorData
-        try {
-          errorData = JSON.parse(responseText)
-        } catch {
-          errorData = { error: responseText || "Failed to submit quiz" }
-        }
-        console.error("Quiz submission error:", errorData)
-        throw new Error(errorData.error || errorData.details || errorData.message || "Failed to submit quiz")
-      }
-
-      let data
-      try {
-        data = JSON.parse(responseText)
-      } catch (parseError) {
-        console.error("Failed to parse submission response:", parseError)
-      }
-
-      console.log("Quiz submitted successfully:", data)
-      
-      // Add a small delay to ensure backend has processed the submission
-      setTimeout(() => {
-        router.push(`/quizzes/${quizId}/results`)
-      }, 500)
-    } catch (err) {
-      console.error("Failed to submit quiz:", err)
-      setError(err instanceof Error ? err.message : "Failed to submit quiz")
-    } finally {
-      setIsSubmitting(false)
+    const payload = {
+      userId: user.id,
+      answers: answersArray,
+      timeSpent: timeSpentSeconds,
     }
+
+    submitQuiz(`/api/v1/quiz/${quizId}/submit`, payload)
   }
 
   if (isLoading) {
@@ -260,7 +144,7 @@ export default function QuizPage() {
       <MainLayout>
         <div className="flex min-h-[400px] items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600"></div>
             <p className="mt-4 text-gray-600">Loading quiz...</p>
           </div>
         </div>
@@ -273,8 +157,10 @@ export default function QuizPage() {
       <MainLayout>
         <div className="flex min-h-[400px] items-center justify-center">
           <div className="text-center">
-            <p className="text-red-600 mb-4">{error || "Quiz not found"}</p>
-            <Button onClick={() => router.push("/dashboard")}>Back to Dashboard</Button>
+            <p className="mb-4 text-red-600">{error || "Quiz not found"}</p>
+            <Button onClick={() => router.push("/dashboard")}>
+              Back to Dashboard
+            </Button>
           </div>
         </div>
       </MainLayout>
@@ -282,20 +168,31 @@ export default function QuizPage() {
   }
 
   // Safety check for questions - this should not happen if we check in fetchQuiz, but keep as fallback
-  if (!quiz.questions || !Array.isArray(quiz.questions) || quiz.questions.length === 0) {
+  if (
+    !quiz.questions ||
+    !Array.isArray(quiz.questions) ||
+    quiz.questions.length === 0
+  ) {
     return (
       <MainLayout>
         <div className="flex min-h-[400px] items-center justify-center">
           <div className="text-center">
-            <p className="text-red-600 mb-4">This quiz has no questions available.</p>
-            <Button onClick={() => router.push("/dashboard")}>Back to Dashboard</Button>
+            <p className="mb-4 text-red-600">
+              This quiz has no questions available.
+            </p>
+            <Button onClick={() => router.push("/dashboard")}>
+              Back to Dashboard
+            </Button>
           </div>
         </div>
       </MainLayout>
     )
   }
 
-  const safeQuestionIndex = Math.max(0, Math.min(currentQuestionIndex, quiz.questions.length - 1))
+  const safeQuestionIndex = Math.max(
+    0,
+    Math.min(currentQuestionIndex, quiz.questions.length - 1)
+  )
   const currentQuestion = quiz.questions[safeQuestionIndex]
   const answeredCount = Object.keys(answers).length
   const totalQuestions = quiz.questions.length
@@ -306,7 +203,7 @@ export default function QuizPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="mx-auto max-w-4xl space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -315,7 +212,7 @@ export default function QuizPage() {
             </Button>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{quiz.title}</h1>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="mt-1 text-sm text-gray-600">
                 {quiz.difficulty} • {quiz.type.replace("_", " ")}
               </p>
             </div>
@@ -323,7 +220,7 @@ export default function QuizPage() {
 
           {/* Timer */}
           {timeRemaining !== null && (
-            <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-50 border border-blue-200">
+            <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2">
               <Clock className="h-5 w-5 text-blue-600" />
               <span className="text-lg font-semibold text-blue-900">
                 {formatTime(timeRemaining)}
@@ -342,23 +239,23 @@ export default function QuizPage() {
               {answeredCount} / {totalQuestions} answered
             </span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="h-2 w-full rounded-full bg-gray-200">
             <div
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${((safeQuestionIndex + 1) / totalQuestions) * 100}%` }}
+              className="h-2 rounded-full bg-blue-600 transition-all duration-300"
+              style={{
+                width: `${((safeQuestionIndex + 1) / totalQuestions) * 100}%`,
+              }}
             />
           </div>
         </div>
 
-        <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200">
+        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <div className="space-y-6">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              <h2 className="mb-2 text-xl font-semibold text-gray-900">
                 {currentQuestion.text}
               </h2>
-              <p className="text-sm text-gray-500">
-                Select your answer below
-              </p>
+              <p className="text-sm text-gray-500">Select your answer below</p>
             </div>
 
             {/* Answer Options */}
@@ -368,8 +265,10 @@ export default function QuizPage() {
                 return (
                   <button
                     key={index}
-                    onClick={() => handleAnswerSelect(currentQuestion.id, option)}
-                    className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+                    onClick={() =>
+                      handleAnswerSelect(currentQuestion.id, option)
+                    }
+                    className={`w-full rounded-lg border-2 p-4 text-left transition-all ${
                       isSelected
                         ? "border-blue-500 bg-blue-50 text-blue-900"
                         : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
@@ -377,7 +276,9 @@ export default function QuizPage() {
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-medium">{option}</span>
-                      {isSelected && <CheckCircle2 className="h-5 w-5 text-blue-600" />}
+                      {isSelected && (
+                        <CheckCircle2 className="h-5 w-5 text-blue-600" />
+                      )}
                     </div>
                   </button>
                 )
@@ -390,7 +291,9 @@ export default function QuizPage() {
         <div className="flex items-center justify-between">
           <Button
             variant="outline"
-            onClick={() => setCurrentQuestionIndex((prev) => Math.max(0, prev - 1))}
+            onClick={() =>
+              setCurrentQuestionIndex((prev) => Math.max(0, prev - 1))
+            }
             disabled={currentQuestionIndex === 0}
           >
             Previous
@@ -424,7 +327,7 @@ export default function QuizPage() {
         </div>
 
         {/* Question Navigation Dots */}
-        <div className="flex flex-wrap gap-2 justify-center">
+        <div className="flex flex-wrap justify-center gap-2">
           {quiz.questions.map((q, index) => {
             const isAnswered = answers[q.id]
             const isCurrent = index === safeQuestionIndex
@@ -432,12 +335,12 @@ export default function QuizPage() {
               <button
                 key={q.id}
                 onClick={() => setCurrentQuestionIndex(index)}
-                className={`w-10 h-10 rounded-full border-2 transition-all ${
+                className={`h-10 w-10 rounded-full border-2 transition-all ${
                   isCurrent
                     ? "border-blue-500 bg-blue-500 text-white"
                     : isAnswered
-                    ? "border-green-500 bg-green-50 text-green-700"
-                    : "border-gray-300 hover:border-gray-400"
+                      ? "border-green-500 bg-green-50 text-green-700"
+                      : "border-gray-300 hover:border-gray-400"
                 }`}
               >
                 {index + 1}
@@ -449,4 +352,3 @@ export default function QuizPage() {
     </MainLayout>
   )
 }
-

@@ -20,4 +20,3 @@ export const fetcherWithConfig = async <T = any>(
   const response = await apiClient.get<T>(url, config)
   return response.data
 }
-

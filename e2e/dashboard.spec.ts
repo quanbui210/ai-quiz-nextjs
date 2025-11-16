@@ -43,4 +43,3 @@ test.describe("Dashboard", () => {
     await expect(page.getByText("Quizzes Taken")).toBeVisible()
   })
 })
-
