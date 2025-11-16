@@ -1,6 +1,6 @@
 # Quiz Next.js Frontend
 
-A full-stack quiz application built with Next.js 14, TypeScript, and modern React patterns. Features AI-powered quiz generation, real-time progress tracking, and a pause/resume system for quiz attempts.
+A full-stack quiz application built with Next.js 14, TypeScript, and modern React patterns. Features AI-powered quiz generation, suggestion and explanation, real-time progress tracking, AI tutor and RAG-based quiz generation from documentation.
 
 ## Tech Stack
 
