@@ -9,7 +9,7 @@ import { apiClient } from "@/lib/api/client"
 
 export default function CallbackPage() {
   const router = useRouter()
-  const { setAuth } = useAuthStore()
+  const { setAuth, setLoading } = useAuthStore()
   const [error, setError] = useState<string | null>(null)
   const hasProcessedRef = useRef(false)
 
@@ -40,14 +40,11 @@ export default function CallbackPage() {
           throw new Error("No access token in callback")
         }
 
-        const apiUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
-        const response = await fetch(`${apiUrl}/api/v1/auth/callback`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
+        // Use apiClient for consistency and timeout handling
+        // Note: We don't send auth token here since this is the initial callback
+        const response = await apiClient.post<AuthLoginResponse>(
+          API_ENDPOINTS.AUTH.CALLBACK,
+          {
             access_token: accessToken,
             refresh_token: refreshToken,
             provider_token: providerToken,
@@ -55,21 +52,45 @@ export default function CallbackPage() {
             expires_at: expiresAt ? parseInt(expiresAt) : undefined,
             expires_in: expiresIn ? parseInt(expiresIn) : undefined,
             token_type: tokenType,
-          }),
-        })
+          }
+        )
 
-        if (!response.ok) {
-          const errorData = await response
-            .json()
-            .catch(() => ({ error: "Unknown error" }))
-          throw new Error(
-            errorData.error || errorData.message || "Failed to process callback"
-          )
+        const data = response.data
+
+        // Log the response for debugging
+        console.log("Callback response:", data)
+        
+        // Validate that we have the required data
+        if (!data.user) {
+          throw new Error("Backend response missing user data")
+        }
+        if (!data.session) {
+          throw new Error("Backend response missing session data")
+        }
+        if (!data.session.access_token) {
+          throw new Error("Backend response missing access_token")
         }
 
-        const data: AuthLoginResponse = await response.json()
-
+        console.log("Setting auth with user:", data.user?.id, "session:", !!data.session?.access_token)
         setAuth(data)
+        setLoading(false) // Ensure loading is cleared after successful auth
+
+        // Verify the data was stored
+        await new Promise(resolve => setTimeout(resolve, 100))
+        const stored = localStorage.getItem("auth-storage")
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored)
+            const hasSession = parsed?.state?.session?.access_token
+            const hasUser = parsed?.state?.user?.id
+            console.log("Verification - Stored session:", !!hasSession, "Stored user:", !!hasUser)
+            if (!hasSession || !hasUser) {
+              console.error("WARNING: Auth data not properly stored!", parsed)
+            }
+          } catch (e) {
+            console.error("Failed to verify stored auth data:", e)
+          }
+        }
 
         if (data.isAdmin) {
           router.push("/admin/dashboard")
@@ -78,6 +99,7 @@ export default function CallbackPage() {
         }
       } catch (err) {
         console.error("Callback error:", err)
+        setLoading(false) // Clear loading on error
         setError(err instanceof Error ? err.message : "Unknown error")
         setTimeout(() => {
           router.push(
@@ -88,7 +110,7 @@ export default function CallbackPage() {
     }
 
     handleHashCallback()
-  }, [router, setAuth])
+  }, [router, setAuth, setLoading])
 
   if (error) {
     return (
