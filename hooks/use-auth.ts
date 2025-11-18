@@ -113,7 +113,8 @@ export function useAuth() {
   const login = useCallback(async () => {
     setLoading(true)
     try {
-      const loginUrl = "/api/auth/login"
+      const apiBase = process.env.NEXT_PUBLIC_API_URL;
+      const loginUrl = `${apiBase}/api/auth/login`;
 
       const response = await fetch(loginUrl, {
         method: "GET",
