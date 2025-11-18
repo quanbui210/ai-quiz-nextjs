@@ -4,6 +4,7 @@ import { useAuthStore } from "@/stores/use-auth-store"
 import { useAPI } from "./use-api"
 import { useMutation } from "./use-mutation"
 import { API_ENDPOINTS } from "@/lib/constants"
+import { apiClient } from "@/lib/api/client"
 import {
   AuthLoginResponse,
   AuthSessionResponse,
@@ -113,39 +114,34 @@ export function useAuth() {
   const login = useCallback(async () => {
     setLoading(true)
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_URL;
-      const loginUrl = `${apiBase}/api/v1/auth/login`;
+      const frontendUrl =
+        process.env.NEXT_PUBLIC_FRONTEND_URL ||
+        (typeof window !== "undefined" ? window.location.origin : "http://localhost:3000")
 
-      const response = await fetch(loginUrl, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
+      const response = await apiClient.get<{ url: string }>(
+        API_ENDPOINTS.AUTH.LOGIN,
+        {
+          params: {
+            redirectTo: `${frontendUrl}/callback`,
+          },
+        }
+      )
 
-      if (!response.ok) {
-        const errorData = await response
-          .json()
-          .catch(() => ({ error: "Unknown error" }))
-        console.error("Login response error:", response.status, errorData)
-        setLoading(false)
-        throw new Error(
-          `Failed to initiate login: ${response.status} ${errorData.error || errorData.details || "Unknown error"}`
-        )
-      }
-
-      const data = await response.json()
-
-      if (data.url) {
-        window.location.href = data.url
+      if (response.data?.url) {
+        window.location.href = response.data.url
       } else {
         setLoading(false)
         throw new Error("No redirect URL in response")
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error)
       setLoading(false)
-      throw error // Re-throw so the caller can handle it
+      const errorMessage =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to initiate login"
+      throw new Error(errorMessage)
     }
   }, [setLoading])
 

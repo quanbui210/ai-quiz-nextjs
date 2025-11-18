@@ -3,7 +3,14 @@ import { NextRequest, NextResponse } from "next/server"
 export async function GET(request: NextRequest) {
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
-    const backendUrl = `${apiUrl}/api/v1/auth/login`
+    
+    const frontendUrl = 
+      process.env.NEXT_PUBLIC_FRONTEND_URL || 
+      request.headers.get("origin") || 
+      request.nextUrl.origin ||
+      "http://localhost:3000"
+    
+    const backendUrl = `${apiUrl}/api/v1/auth/login?redirect_uri=${encodeURIComponent(`${frontendUrl}/callback`)}`
 
     const response = await fetch(backendUrl, {
       method: "GET",

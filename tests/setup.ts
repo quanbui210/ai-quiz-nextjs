@@ -33,7 +33,6 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/",
 }))
 
-// Mock window.location
 Object.defineProperty(window, "location", {
   value: {
     href: "",
