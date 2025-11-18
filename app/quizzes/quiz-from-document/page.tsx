@@ -336,7 +336,7 @@ export default function QuizFromDocumentPage() {
           <p className="text-gray-600">
             Upload your documents (PDFs, text files, etc.) and automatically
             generate personalized quizzes based on the content. Our AI uses RAG
-            (Retrieval-Augmented Generation) technology to analyze your
+            (Retrieval-Augmented Generation) technique to analyze your
             document, extract key concepts, and create relevant questions to
             help you master the material.
           </p>
