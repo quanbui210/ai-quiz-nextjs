@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Button } from "@/components/ui/button"
@@ -77,8 +77,9 @@ export default function QuizPage() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [attemptId, setAttemptId] = useState<string | null>(null)
   const [isPaused, setIsPaused] = useState(false)
-  // Only check for resume if quiz is not completed (set via useEffect after quiz loads)
   const [isCheckingResume, setIsCheckingResume] = useState(false)
+  const hasCheckedResumeRef = useRef(false)
+  const hasAutoSubmittedRef = useRef(false)
   const [pauseSuccessDialog, setPauseSuccessDialog] = useState(false)
   const [pauseSuccessData, setPauseSuccessData] = useState<{
     answered: number
@@ -134,12 +135,21 @@ export default function QuizPage() {
   const error = quizError ? (quizError as Error).message : null
 
   useEffect(() => {
-    if (quiz && quiz.status !== "COMPLETED" && !isCheckingResume) {
-      setIsCheckingResume(true)
-    } else if (quiz && quiz.status === "COMPLETED") {
-      setIsCheckingResume(false)
+    // Always check for resume if quiz is not COMPLETED
+    // The backend will return 404 if no paused attempt exists, which is fine
+    // COMPLETED quizzes don't need resume check
+    if (quiz && !hasCheckedResumeRef.current) {
+      if (quiz.status === "COMPLETED") {
+        // COMPLETED - no need to check resume
+        setIsCheckingResume(false)
+        hasCheckedResumeRef.current = true
+      } else {
+        // ACTIVE or PENDING - check for paused attempt
+        setIsCheckingResume(true)
+        hasCheckedResumeRef.current = true
+      }
     }
-  }, [quiz, isCheckingResume])
+  }, [quiz])
 
   const { mutate: pauseQuiz, isLoading: isPausing } =
     useMutation<PauseResponse>("post", {
@@ -182,12 +192,16 @@ export default function QuizPage() {
     setAnswers(savedAnswers)
 
     if (quiz && quiz.timer && resumeData.elapsedTime) {
-      const remainingTime = quiz.timer - resumeData.elapsedTime * 1000
-      setInitialTimer(quiz.timer)
+      const timerMs = quiz.timer * 1000 
+      const elapsedMs = resumeData.elapsedTime * 1000 // Convert to milliseconds
+      const remainingTime = timerMs - elapsedMs
+      setInitialTimer(timerMs)
       setTimeRemaining(Math.max(0, remainingTime))
+      console.log(`Resuming quiz: ${quiz.timer}s total, ${resumeData.elapsedTime}s elapsed, ${remainingTime}ms remaining`)
     } else if (quiz && quiz.timer) {
-      setInitialTimer(quiz.timer)
-      setTimeRemaining(quiz.timer)
+      const timerMs = quiz.timer * 1000 // Convert seconds to milliseconds
+      setInitialTimer(timerMs)
+      setTimeRemaining(timerMs)
     }
   }, [resumeData, quiz])
 
@@ -195,8 +209,9 @@ export default function QuizPage() {
     if (resumeError && isCheckingResume) {
       setIsCheckingResume(false)
       if (quiz && quiz.timer) {
-        setInitialTimer(quiz.timer)
-        setTimeRemaining(quiz.timer)
+        const timerMs = quiz.timer * 1000 // Convert seconds to milliseconds
+        setInitialTimer(timerMs)
+        setTimeRemaining(timerMs)
       }
     }
   }, [resumeError, isCheckingResume, quiz])
@@ -207,9 +222,11 @@ export default function QuizPage() {
         router.replace(`/quizzes/${quizId}/results`)
         return
       }
-      if (!isCheckingResume && !isPaused && quiz.timer && !timeRemaining) {
-        setInitialTimer(quiz.timer)
-        setTimeRemaining(quiz.timer)
+      if (!isCheckingResume && !isPaused && quiz.timer && timeRemaining === null) {
+        // Backend sends timer in seconds, convert to milliseconds
+        const timerMs = quiz.timer * 1000
+        setInitialTimer(timerMs)
+        setTimeRemaining(timerMs)
       }
     }
   }, [quiz, quizId, router, isCheckingResume, isPaused, timeRemaining])
@@ -242,11 +259,16 @@ export default function QuizPage() {
   }, [timeRemaining, isPaused])
 
   useEffect(() => {
-    if (timeRemaining === 0 && quiz && !isSubmitting) {
+   
+    const hasAnswers = Object.keys(answers).length > 0
+    if (timeRemaining === 0 && quiz && !isSubmitting && !hasAutoSubmittedRef.current && hasAnswers) {
+      hasAutoSubmittedRef.current = true
       handleSubmit()
+    } else if (timeRemaining === 0 && quiz && !hasAnswers && !hasAutoSubmittedRef.current) {
+      hasAutoSubmittedRef.current = true
+      console.log("Time ran out but no answers submitted. User must submit manually.")
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeRemaining])
+  }, [timeRemaining, quiz, isSubmitting, answers])
 
   const formatTime = (ms: number): string => {
     const totalSeconds = Math.floor(ms / 1000)
@@ -268,12 +290,13 @@ export default function QuizPage() {
       return
     }
 
-    const answersArray = Object.entries(answers).map(
-      ([questionId, userAnswer]) => ({
+    // Always ensure answers is an array, even if empty
+    const answersArray = Object.entries(answers)
+      .filter(([_, userAnswer]) => userAnswer !== undefined && userAnswer !== null && userAnswer !== "")
+      .map(([questionId, userAnswer]) => ({
         questionId,
         userAnswer,
-      })
-    )
+      }))
 
     const elapsedTimeSeconds =
       initialTimer && timeRemaining !== null
@@ -281,10 +304,19 @@ export default function QuizPage() {
         : 0
 
     const payload = {
-      answers: answersArray,
+      answers: answersArray, // Always send array, even if empty
       elapsedTime: elapsedTimeSeconds,
     }
 
+    // Validate payload before sending
+    if (!Array.isArray(payload.answers)) {
+      console.error("Invalid answers format:", payload.answers)
+      setErrorMessage("Invalid answers format")
+      setErrorDialog(true)
+      return
+    }
+
+    console.log("Pausing quiz with payload:", payload)
     pauseQuiz(API_ENDPOINTS.QUIZ.PAUSE(quizId), payload)
   }
 
@@ -296,12 +328,12 @@ export default function QuizPage() {
       return
     }
 
-    const answersArray = Object.entries(answers).map(
-      ([questionId, userAnswer]) => ({
+    const answersArray = Object.entries(answers)
+      .filter(([_, userAnswer]) => userAnswer !== undefined && userAnswer !== null && userAnswer !== "")
+      .map(([questionId, userAnswer]) => ({
         questionId,
         userAnswer,
-      })
-    )
+      }))
 
     const timeSpentSeconds =
       initialTimer && timeRemaining !== null
@@ -310,7 +342,7 @@ export default function QuizPage() {
 
     const payload: any = {
       userId: user.id,
-      answers: answersArray,
+      answers: answersArray, // Always send array, even if empty
       timeSpent: timeSpentSeconds,
     }
 
@@ -318,6 +350,15 @@ export default function QuizPage() {
       payload.attemptId = attemptId
     }
 
+    // Validate payload before sending
+    if (!Array.isArray(payload.answers)) {
+      console.error("Invalid answers format:", payload.answers)
+      setErrorMessage("Invalid answers format")
+      setErrorDialog(true)
+      return
+    }
+
+    console.log("Submitting quiz with payload:", payload)
     submitQuiz(`/api/v1/quiz/${quizId}/submit`, payload)
   }
 
@@ -365,8 +406,9 @@ export default function QuizPage() {
                   setAttemptId(null)
                   setIsPaused(false)
                   if (quiz && quiz.timer) {
-                    setInitialTimer(quiz.timer)
-                    setTimeRemaining(quiz.timer)
+                    const timerMs = quiz.timer * 1000 // Convert seconds to milliseconds
+                    setInitialTimer(timerMs)
+                    setTimeRemaining(timerMs)
                   }
                 }}
               >

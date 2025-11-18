@@ -314,7 +314,7 @@ export function QuizGenerationDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Wand2 className="h-5 w-5 text-blue-600" />
@@ -326,7 +326,7 @@ export function QuizGenerationDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="space-y-6 py-4 overflow-y-auto flex-1">
           {/* Input Section */}
           <div className="space-y-2">
             <label
@@ -381,10 +381,10 @@ export function QuizGenerationDialog({
 
           {/* Suggestions Section */}
           {suggestions.length > 0 && (
-            <div className="space-y-3">
+            <div className="space-y-2 rounded-lg border border-blue-100 bg-blue-50 p-3">
               <div className="flex items-center gap-2">
                 <Lightbulb className="h-4 w-4 text-blue-600" />
-                <h3 className="text-sm font-medium text-gray-900">
+                <h3 className="text-sm font-semibold text-gray-900">
                   Suggested Topics
                 </h3>
                 {isSuggestingQuiz && (
@@ -396,10 +396,10 @@ export function QuizGenerationDialog({
                   <button
                     key={index}
                     onClick={() => handleSelectSuggestion(suggestion)}
-                    className={`flex items-center justify-between rounded-lg border p-3 text-left text-sm transition-colors ${
+                    className={`flex items-center justify-between rounded-md border p-2.5 text-left text-sm transition-colors ${
                       selectedSuggestion === suggestion
-                        ? "border-blue-500 bg-blue-50 text-blue-900"
-                        : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                        ? "border-blue-500 bg-blue-100 text-blue-900"
+                        : "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50"
                     }`}
                   >
                     <span>{suggestion}</span>
@@ -413,17 +413,17 @@ export function QuizGenerationDialog({
           )}
 
           {/* Quiz Configuration Section */}
-          <div className="space-y-4 border-t pt-4">
+          <div className="space-y-3 border-t pt-4">
             <h3 className="text-sm font-medium text-gray-900">
               Quiz Configuration
             </h3>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               {/* Difficulty */}
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <label
                   htmlFor="difficulty"
-                  className="text-sm font-medium text-gray-700"
+                  className="text-xs font-medium text-gray-700"
                 >
                   Difficulty
                 </label>
@@ -431,7 +431,7 @@ export function QuizGenerationDialog({
                   value={difficulty}
                   onValueChange={(value) => setDifficulty(value as Difficulty)}
                 >
-                  <SelectTrigger id="difficulty">
+                  <SelectTrigger id="difficulty" className="h-9">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -449,10 +449,10 @@ export function QuizGenerationDialog({
               </div>
 
               {/* Quiz Type */}
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <label
                   htmlFor="quiz-type"
-                  className="text-sm font-medium text-gray-700"
+                  className="text-xs font-medium text-gray-700"
                 >
                   Quiz Type
                 </label>
@@ -460,7 +460,7 @@ export function QuizGenerationDialog({
                   value={quizType}
                   onValueChange={(value) => setQuizType(value as QuizType)}
                 >
-                  <SelectTrigger id="quiz-type">
+                  <SelectTrigger id="quiz-type" className="h-9">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -478,12 +478,13 @@ export function QuizGenerationDialog({
               </div>
             </div>
 
+            {/* AI Model - Separate line */}
             {subscription?.allowedModels &&
               subscription.allowedModels.length > 0 && (
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label
                     htmlFor="ai-model"
-                    className="text-sm font-medium text-gray-700"
+                    className="text-xs font-medium text-gray-700"
                   >
                     AI Model
                   </label>
@@ -491,7 +492,7 @@ export function QuizGenerationDialog({
                     value={selectedModel}
                     onValueChange={setSelectedModel}
                   >
-                    <SelectTrigger id="ai-model">
+                    <SelectTrigger id="ai-model" className="h-9">
                       <SelectValue placeholder="Select AI model" />
                     </SelectTrigger>
                     <SelectContent>
@@ -508,98 +509,71 @@ export function QuizGenerationDialog({
                 </div>
               )}
 
-            {/* Timer */}
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <Clock className="h-4 w-4" />
-                Timer
-              </label>
-              <div className="flex gap-2">
-                <Select
-                  value={timerOption}
-                  onValueChange={(value) => {
-                    setTimerOption(value as "15" | "30" | "custom" | "none")
-                    if (value !== "custom") {
-                      setCustomTimerMinutes("")
-                    }
-                  }}
-                >
-                  <SelectTrigger className="flex-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5 minutes</SelectItem>
-                    <SelectItem value="10">10 minutes</SelectItem>
-                    <SelectItem value="15">15 minutes</SelectItem>
-                    <SelectItem value="30">30 minutes</SelectItem>
-                    <SelectItem value="custom">Custom</SelectItem>
-                    <SelectItem value="none">No timer</SelectItem>
-                  </SelectContent>
-                </Select>
-                {timerOption === "custom" && (
-                  <input
-                    type="number"
-                    min="1"
-                    value={customTimerMinutes}
-                    onChange={(e) => setCustomTimerMinutes(e.target.value)}
-                    placeholder="Minutes"
-                    className="w-24 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                )}
-              </div>
-              {timerOption === "none" && (
-                <p className="text-xs text-gray-500">
-                  Quiz can be created without a timer. Timer can be set later.
-                </p>
-              )}
-              {timerOption !== "custom" && timerOption !== "none" && (
-                <p className="text-xs text-gray-500">
-                  {timerOption} minutes ({parseInt(timerOption) * 60 * 1000}ms)
-                </p>
-              )}
-              {timerOption === "custom" && customTimerMinutes && (
-                <p className="text-xs text-gray-500">
-                  {customTimerMinutes} minutes (
-                  {parseInt(customTimerMinutes) * 60 * 1000}ms)
-                </p>
-              )}
-            </div>
-
-            {/* Question Count */}
-            <div className="space-y-2">
-              <label
-                htmlFor="question-count"
-                className="text-sm font-medium text-gray-700"
-              >
-                Number of Questions
-              </label>
-              <input
-                id="question-count"
-                type="number"
-                min="1"
-                max="50"
-                value={questionCount}
-                onChange={(e) => setQuestionCount(parseInt(e.target.value))}
-                className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            {usage && (
-              <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">
-                    Quizzes: {usage.quizzesCount} /{" "}
-                    {subscription?.maxQuizzes || 0}
-                  </span>
-                  {usage.quizzesRemaining <= 0 && (
-                    <span className="flex items-center gap-1 text-sm text-orange-600">
-                      <AlertCircle className="h-4 w-4" />
-                      Limit reached
-                    </span>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="flex items-center gap-1.5 text-xs font-medium text-gray-700">
+                  <Clock className="h-3.5 w-3.5" />
+                  Timer
+                </label>
+                <div className="flex gap-2 items-start mt-10">
+                  <Select
+                    value={timerOption}
+                    onValueChange={(value) => {
+                      setTimerOption(value as "15" | "30" | "custom" | "none")
+                      if (value !== "custom") {
+                        setCustomTimerMinutes("")
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="h-9 flex-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5 min</SelectItem>
+                      <SelectItem value="10">10 min</SelectItem>
+                      <SelectItem value="15">15 min</SelectItem>
+                      <SelectItem value="30">30 min</SelectItem>
+                      <SelectItem value="custom">Custom</SelectItem>
+                      <SelectItem value="none">No timer</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {timerOption === "custom" && (
+                    <input
+                      type="number"
+                      min="1"
+                      value={customTimerMinutes}
+                      onChange={(e) => setCustomTimerMinutes(e.target.value)}
+                      placeholder="Min"
+                      className="h-9 w-16 rounded-md border border-gray-300 px-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
                   )}
                 </div>
               </div>
-            )}
+
+              {/* Question Count */}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="question-count"
+                  className="flex items-center gap-1.5 text-xs font-medium text-gray-700"
+                >
+                  Number of Questions
+                </label>
+                <input
+                  id="question-count"
+                  type="number"
+                  min="1"
+                  max="50"
+                  value={questionCount}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    if (value === "" || parseInt(value) >= 1) {
+                      setQuestionCount(value === "" ? 1 : parseInt(value))
+                    }
+                  }}
+                  className="h-9 w-full rounded-md border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
           </div>
 
           {error && (
@@ -622,6 +596,7 @@ export function QuizGenerationDialog({
             disabled={
               !quizName.trim() ||
               isCreatingQuiz ||
+              isValidating ||
               (validationResult ? !validationResult.isValid : false) ||
               (getTimerInMilliseconds() !== null &&
                 getTimerInMilliseconds()! <= 0) ||

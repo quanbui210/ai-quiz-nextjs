@@ -278,7 +278,7 @@ export default function ChatPage() {
           </div>
           {document && (
             <p className="mt-2 text-xs text-gray-500">
-              Powered by RAG technology - answers are based on your document
+              Developed using RAG-pattern - answers are based on your document
               content
             </p>
           )}

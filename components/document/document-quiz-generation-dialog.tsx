@@ -151,10 +151,12 @@ export function DocumentQuizGenerationDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* Topic Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="topicId">Topic (Optional)</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="topicId" className="text-xs font-medium text-gray-700">
+              Topic (Optional)
+            </Label>
             {isLoadingTopics ? (
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -167,7 +169,7 @@ export function DocumentQuizGenerationDialog({
                 onChange={(e) =>
                   setFormData({ ...formData, topicId: e.target.value })
                 }
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="flex h-9 w-full rounded-md border border-gray-300 bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               >
                 <option value="">No topic (standalone quiz)</option>
                 {topics.map((topic) => (
@@ -187,8 +189,10 @@ export function DocumentQuizGenerationDialog({
           </div>
 
           {/* Quiz Title */}
-          <div className="space-y-2">
-            <Label htmlFor="title">Quiz Title</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="title" className="text-xs font-medium text-gray-700">
+              Quiz Title
+            </Label>
             <Input
               id="title"
               type="text"
@@ -197,33 +201,15 @@ export function DocumentQuizGenerationDialog({
                 setFormData({ ...formData, title: e.target.value })
               }
               placeholder={`${documentFilename} Quiz`}
+              className="h-9"
             />
-          </div>
-
-          {/* Number of Questions */}
-          <div className="space-y-2">
-            <Label htmlFor="questionCount">Number of Questions</Label>
-            <Input
-              id="questionCount"
-              type="number"
-              min="1"
-              max="50"
-              value={formData.questionCount}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  questionCount: parseInt(e.target.value) || 10,
-                })
-              }
-            />
-            {errors.questionCount && (
-              <p className="text-sm text-red-600">{errors.questionCount}</p>
-            )}
           </div>
 
           {/* Quiz Type */}
-          <div className="space-y-2">
-            <Label htmlFor="quizType">Quiz Type</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="quizType" className="text-xs font-medium text-gray-700">
+              Quiz Type
+            </Label>
             <select
               id="quizType"
               value={formData.quizType}
@@ -233,7 +219,7 @@ export function DocumentQuizGenerationDialog({
                   quizType: e.target.value as QuizType,
                 })
               }
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="flex h-9 w-full rounded-md border border-gray-300 bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               <option value="MULTIPLE_CHOICE">Multiple Choice</option>
               <option value="TRUE_FALSE">True/False</option>
@@ -241,33 +227,68 @@ export function DocumentQuizGenerationDialog({
             </select>
           </div>
 
-          {/* Timer */}
-          <div className="space-y-2">
-            <Label htmlFor="timer">Timer (minutes)</Label>
-            <Input
-              id="timer"
-              type="number"
-              min="0"
-              value={formData.timer || ""}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  timer: e.target.value ? parseInt(e.target.value) : null,
-                })
-              }
-              placeholder="No timer"
-            />
-            <p className="text-xs text-gray-500">
-              Leave empty for no time limit
-            </p>
-            {errors.timer && (
-              <p className="text-sm text-red-600">{errors.timer}</p>
-            )}
+          {/* Number of Questions and Timer - Same line */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* Number of Questions */}
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="questionCount"
+                className="text-xs font-medium text-gray-700"
+              >
+                Number of Questions
+              </Label>
+              <Input
+                id="questionCount"
+                type="number"
+                min="1"
+                max="50"
+                value={formData.questionCount}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    questionCount: parseInt(e.target.value) || 10,
+                  })
+                }
+                className="h-9"
+              />
+              {errors.questionCount && (
+                <p className="text-sm text-red-600">{errors.questionCount}</p>
+              )}
+            </div>
+
+            {/* Timer */}
+            <div className="space-y-1.5">
+              <Label htmlFor="timer" className="text-xs font-medium text-gray-700">
+                Timer (minutes)
+              </Label>
+              <Input
+                id="timer"
+                type="number"
+                min="0"
+                value={formData.timer || ""}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    timer: e.target.value ? parseInt(e.target.value) : null,
+                  })
+                }
+                placeholder="No timer"
+                className="h-9"
+              />
+              {errors.timer && (
+                <p className="text-sm text-red-600">{errors.timer}</p>
+              )}
+            </div>
           </div>
+          <p className="text-xs text-gray-500 -mt-2">
+            Leave timer empty for no time limit
+          </p>
 
           {/* Focus Area */}
-          <div className="space-y-2">
-            <Label htmlFor="focus">Focus Area (Optional)</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="focus" className="text-xs font-medium text-gray-700">
+              Focus Area (Optional)
+            </Label>
             <textarea
               id="focus"
               value={formData.focus}
@@ -276,7 +297,7 @@ export function DocumentQuizGenerationDialog({
               }
               placeholder="e.g., Chapter 3 concepts, Section 2: Introduction, pages 45-60"
               rows={3}
-              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex min-h-[80px] w-full rounded-md border border-gray-300 bg-background px-3 py-2 text-sm placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             />
             <p className="text-xs text-gray-500">
               Specify a section, chapter, or topic to focus on. Leave empty to

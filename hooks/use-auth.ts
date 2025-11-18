@@ -24,7 +24,6 @@ export function useAuth() {
           }
         }
       } catch (e) {
-        // Invalid storage
       }
     }
     return true

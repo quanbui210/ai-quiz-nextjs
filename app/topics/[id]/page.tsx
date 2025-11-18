@@ -18,6 +18,7 @@ import {
   Edit2,
   Check,
   X,
+  AlertCircle,
 } from "lucide-react"
 import { Topic, Quiz } from "@/types/prisma"
 import { API_ENDPOINTS } from "@/lib/constants"
@@ -26,6 +27,7 @@ import { QuizGenerationDialog } from "@/components/quiz/quiz-generation-dialog"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { useMutation } from "@/hooks/use-mutation"
 import { useAPI } from "@/hooks/use-api"
+import { useSubscription } from "@/hooks/use-subscription"
 import Link from "next/link"
 
 export default function TopicPage() {
@@ -90,6 +92,8 @@ export default function TopicPage() {
     revalidateOnFocus: false,
     shouldRetryOnError: false,
   })
+
+  const { subscription, usage } = useSubscription()
 
   const analytics: AnalyticsResponse | null = analyticsData
     ? (analyticsData as any).analytics ||
@@ -369,10 +373,27 @@ export default function TopicPage() {
               <p className="text-sm text-gray-500">
                 Generate a personalized quiz based on this topic
               </p>
+              {usage && subscription && (
+                <div className="mx-auto max-w-md rounded-lg border border-gray-200 bg-gray-50 p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">
+                      Quizzes: {usage.quizzesCount} /{" "}
+                      {subscription.maxQuizzes || 0}
+                    </span>
+                    {usage.quizzesRemaining <= 0 && (
+                      <span className="flex items-center gap-1 text-sm text-orange-600">
+                        <AlertCircle className="h-4 w-4" />
+                        Limit reached
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
               <Button
                 size="lg"
                 onClick={() => setIsQuizDialogOpen(true)}
                 className="mt-4"
+                disabled={usage && usage.quizzesRemaining <= 0}
               >
                 <Rocket className="mr-2 h-5 w-5" />
                 Start Generate Quiz
@@ -477,7 +498,7 @@ export default function TopicPage() {
                           <span>•</span>
                           <div className="flex items-center gap-1">
                             <Clock className="h-4 w-4" />
-                            <span>{Math.floor(quiz.timer / 60000)} min</span>
+                            <span>{Math.floor(quiz.timer / 60)} min</span>
                           </div>
                         </>
                       )}
