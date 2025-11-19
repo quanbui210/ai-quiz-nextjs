@@ -8,6 +8,10 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "QuizzAI - AI-Powered Quiz Learning Platform",
   description: "Create and take AI-generated quizzes to master any topic",
+  icons: {
+    icon: "/icons/icon.svg",
+    apple: "/icons/icon.svg",
+  },
 }
 
 export default function RootLayout({

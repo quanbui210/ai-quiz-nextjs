@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { useAuthStore } from "@/stores/use-auth-store"
 import { Button } from "@/components/ui/button"
-import { Shield } from "lucide-react"
+import Image from "next/image"
 import Link from "next/link"
 import {
   Chrome,
@@ -13,7 +13,6 @@ import {
   Zap,
   TrendingUp,
   Brain,
-  Sparkles,
   ArrowRight,
   MessageSquare,
   FileText,
@@ -70,7 +69,7 @@ function LoginPageContent() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="flex min-h-screen items-center justify-center bg-white">
         <div className="text-center">
           <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600"></div>
           <p className="mt-4 text-gray-600">Loading...</p>
@@ -81,7 +80,7 @@ function LoginPageContent() {
 
   if (isAuthenticated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="flex min-h-screen items-center justify-center bg-white">
         <div className="text-center">
           <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600"></div>
           <p className="mt-4 text-gray-600">Redirecting...</p>
@@ -125,27 +124,29 @@ function LoginPageContent() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="animate-blob absolute -right-40 -top-40 h-80 w-80 rounded-full bg-blue-200 opacity-30 mix-blend-multiply blur-xl filter"></div>
-        <div className="animate-blob animation-delay-2000 absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-purple-200 opacity-30 mix-blend-multiply blur-xl filter"></div>
-        <div className="animate-blob animation-delay-4000 absolute left-1/2 top-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 transform rounded-full bg-pink-200 opacity-30 mix-blend-multiply blur-xl filter"></div>
-      </div>
-
+    <div className="min-h-screen bg-gradient-to-br from-white via-blue-50/30 to-gray-50">
       <div className="relative z-10">
         <section className="relative px-4 py-20 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <div className="grid items-center gap-12 lg:grid-cols-2">
               <div className="text-center lg:text-left">
                 <div className="mb-6 inline-flex items-center justify-center lg:justify-start">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 shadow-lg">
-                    <Sparkles className="h-8 w-8 text-white" />
+                  <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white border-2 border-gray-200 p-2 shadow-md">
+                    <Image
+                      src="/icons/icon.svg"
+                      alt="QuizzAI Logo"
+                      width={64}
+                      height={64}
+                      className="object-contain"
+                      priority
+                    />
                   </div>
                 </div>
                 <h1 className="mb-6 text-5xl font-bold text-gray-900 sm:text-6xl">
                   Master Any Topic with
-                  <span className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                    AI-Powered Quizzes
+                  <span className="block">
+                    <span className="bg-gradient-to-r from-blue-700 to-blue-400 bg-clip-text text-transparent">AI-Powered</span>{" "}
+                    <span className="text-gray-900">Quizzes</span>
                   </span>
                 </h1>
                 <p className="mx-auto mb-8 max-w-2xl text-xl text-gray-600 lg:mx-0">
@@ -154,7 +155,7 @@ function LoginPageContent() {
                   journey to mastery today.
                 </p>
 
-                <div className="mx-auto max-w-md rounded-2xl border border-gray-100 bg-white/80 p-8 shadow-xl backdrop-blur-sm lg:mx-0">
+                <div className="mx-auto max-w-md rounded-2xl border border-gray-200 bg-white p-8 shadow-lg lg:mx-0">
                   <p className="mb-4 text-sm font-medium text-gray-700">
                     Get started in seconds
                   </p>
@@ -162,7 +163,7 @@ function LoginPageContent() {
                     <Button
                       onClick={handleGoogleLogin}
                       disabled={isLoading}
-                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transition-all duration-200 hover:from-blue-700 hover:to-purple-700 hover:shadow-xl"
+                      className="w-full bg-gray-900 text-white shadow-lg transition-all duration-200 hover:bg-gray-800 hover:shadow-xl"
                       size="lg"
                     >
                       <Chrome className="mr-2 h-5 w-5" />
@@ -177,9 +178,9 @@ function LoginPageContent() {
                   {features.map((feature, index) => (
                     <div
                       key={index}
-                      className="rounded-xl border border-gray-100 bg-white/60 p-6 shadow-lg backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                      className="rounded-xl border border-gray-200 bg-white p-6 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-blue-200"
                     >
-                      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-500">
+                      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-blue-400 to-blue-700">
                         <feature.icon className="h-6 w-6 text-white" />
                       </div>
                       <h3 className="mb-2 font-semibold text-gray-900">
@@ -196,7 +197,7 @@ function LoginPageContent() {
           </div>
         </section>
 
-        <section className="bg-white/50 px-4 py-20 sm:px-6 lg:px-8">
+        <section className="bg-gradient-to-br from-white via-blue-50/30 to-gray-50 px-4 py-20 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <div className="mb-16 text-center">
               <h2 className="mb-4 text-4xl font-bold text-gray-900">
@@ -211,9 +212,9 @@ function LoginPageContent() {
               {features.map((feature, index) => (
                 <div
                   key={index}
-                  className="rounded-xl border border-gray-100 bg-white p-6 shadow-md transition-all duration-300 hover:shadow-xl"
+                  className="rounded-xl border border-gray-200 bg-white p-6 shadow-md transition-all duration-300 hover:shadow-xl hover:border-blue-300"
                 >
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-500">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-blue-400 to-blue-700">
                     <feature.icon className="h-6 w-6 text-white" />
                   </div>
                   <h3 className="mb-2 text-lg font-semibold text-gray-900">
@@ -226,7 +227,7 @@ function LoginPageContent() {
           </div>
         </section>
 
-        <section className="bg-gradient-to-br from-gray-50 to-blue-50 px-4 py-20 sm:px-6 lg:px-8">
+        <section className="bg-gradient-to-br from-gray-50 via-white to-blue-50/20 px-4 py-20 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <div className="mb-16 text-center">
               <h2 className="mb-4 text-4xl font-bold text-gray-900">
@@ -288,9 +289,9 @@ function LoginPageContent() {
         </section>
 
         {/* Final CTA */}
-        <section className="px-4 py-20 sm:px-6 lg:px-8">
+        <section className="bg-gradient-to-br from-blue-50/50 via-white to-gray-50 px-4 py-20 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-4xl">
-            <div className="rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 p-12 text-center shadow-2xl">
+            <div className="rounded-2xl bg-gradient-to-r from-blue-600 to-blue-700 p-12 text-center shadow-2xl">
               <h2 className="mb-4 text-4xl font-bold text-white">
                 Ready to start learning?
               </h2>
@@ -319,7 +320,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="flex min-h-screen items-center justify-center bg-white">
           <div className="text-center">
             <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600"></div>
             <p className="mt-4 text-gray-600">Loading...</p>

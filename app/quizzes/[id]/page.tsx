@@ -381,22 +381,22 @@ export default function QuizPage() {
     ).length
     return (
       <MainLayout>
-        <div className="flex min-h-[400px] items-center justify-center">
-          <div className="mx-auto max-w-md space-y-6 rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
+        <div className="flex min-h-[400px] items-center justify-center px-4">
+          <div className="mx-auto w-full max-w-md space-y-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
             <div className="text-center">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100">
-                <Play className="h-8 w-8 text-blue-600" />
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 sm:h-16 sm:w-16">
+                <Play className="h-6 w-6 text-blue-600 sm:h-8 sm:w-8" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Resume Quiz</h2>
-              <p className="mt-2 text-gray-600">
+              <h2 className="text-xl font-bold text-gray-900 sm:text-2xl">Resume Quiz</h2>
+              <p className="mt-2 text-sm text-gray-600 sm:text-base">
                 You have a paused quiz. Would you like to continue from where
                 you left off?
               </p>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-xs text-gray-500 sm:text-sm">
                 {answeredCount} questions answered
               </p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <Button
                 variant="outline"
                 className="flex-1"
@@ -475,16 +475,18 @@ export default function QuizPage() {
 
   return (
     <MainLayout>
-      <div className="mx-auto max-w-4xl space-y-6">
+      <div className="mx-auto max-w-4xl space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 sm:gap-4">
             <Button variant="ghost" size="icon" onClick={() => router.back()}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">{quiz.title}</h1>
-              <p className="mt-1 text-sm text-gray-600">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl font-bold text-gray-900 sm:text-2xl truncate">
+                {quiz.title}
+              </h1>
+              <p className="mt-1 text-xs text-gray-600 sm:text-sm">
                 {quiz.difficulty} • {quiz.type.replace("_", " ")}
               </p>
             </div>
@@ -493,9 +495,9 @@ export default function QuizPage() {
           <div className="flex items-center gap-2">
             {/* Timer */}
             {timeRemaining !== null && (
-              <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2">
-                <Clock className="h-5 w-5 text-blue-600" />
-                <span className="text-lg font-semibold text-blue-900">
+              <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 sm:px-4 sm:py-2">
+                <Clock className="h-4 w-4 text-blue-600 sm:h-5 sm:w-5" />
+                <span className="text-base font-semibold text-blue-900 sm:text-lg">
                   {formatTime(timeRemaining)}
                 </span>
               </div>
@@ -507,16 +509,17 @@ export default function QuizPage() {
                 onClick={handlePause}
                 disabled={isPausing}
                 className="flex items-center gap-2"
+                size="sm"
               >
                 {isPausing ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Pausing...
+                    <span className="hidden sm:inline">Pausing...</span>
                   </>
                 ) : (
                   <>
                     <Pause className="h-4 w-4" />
-                    Pause
+                    <span className="hidden sm:inline">Pause</span>
                   </>
                 )}
               </Button>
@@ -526,7 +529,7 @@ export default function QuizPage() {
 
         {/* Progress Bar */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center justify-between text-xs sm:text-sm">
             <span className="text-gray-600">
               Question {safeQuestionIndex + 1} of {totalQuestions}
             </span>
@@ -544,17 +547,17 @@ export default function QuizPage() {
           </div>
         </div>
 
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="space-y-6">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
+          <div className="space-y-4 sm:space-y-6">
             <div>
-              <h2 className="mb-2 text-xl font-semibold text-gray-900">
+              <h2 className="mb-2 text-lg font-semibold text-gray-900 sm:text-xl">
                 {currentQuestion.text}
               </h2>
-              <p className="text-sm text-gray-500">Select your answer below</p>
+              <p className="text-xs text-gray-500 sm:text-sm">Select your answer below</p>
             </div>
 
             {/* Answer Options */}
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {Array.isArray(currentQuestion.options) &&
               currentQuestion.options.length > 0 ? (
                 currentQuestion.options.map((option, index) => {
@@ -565,24 +568,24 @@ export default function QuizPage() {
                       onClick={() =>
                         handleAnswerSelect(currentQuestion.id, option)
                       }
-                      className={`w-full rounded-lg border-2 p-4 text-left transition-all ${
+                      className={`w-full rounded-lg border-2 p-3 text-left transition-all sm:p-4 ${
                         isSelected
                           ? "border-blue-500 bg-blue-50 text-blue-900"
                           : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                       }`}
                     >
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium">{option}</span>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium text-sm sm:text-base break-words flex-1">{option}</span>
                         {isSelected && (
-                          <CheckCircle2 className="h-5 w-5 text-blue-600" />
+                          <CheckCircle2 className="h-5 w-5 text-blue-600 flex-shrink-0" />
                         )}
                       </div>
                     </button>
                   )
                 })
               ) : (
-                <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-                  <p className="text-sm text-yellow-800">
+                <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3 sm:p-4">
+                  <p className="text-xs text-yellow-800 sm:text-sm">
                     No answer options available for this question.
                   </p>
                 </div>
@@ -592,13 +595,15 @@ export default function QuizPage() {
         </div>
 
         {/* Navigation */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Button
             variant="outline"
             onClick={() =>
               setCurrentQuestionIndex((prev) => Math.max(0, prev - 1))
             }
             disabled={currentQuestionIndex === 0}
+            className="w-full sm:w-auto"
+            size="sm"
           >
             Previous
           </Button>
@@ -608,6 +613,8 @@ export default function QuizPage() {
               <Button
                 onClick={() => setCurrentQuestionIndex((prev) => prev + 1)}
                 disabled={currentQuestionIndex >= totalQuestions - 1}
+                className="flex-1 sm:flex-initial"
+                size="sm"
               >
                 Next Question
               </Button>
@@ -616,6 +623,7 @@ export default function QuizPage() {
                 onClick={handleSubmit}
                 disabled={isSubmitting || answeredCount < totalQuestions}
                 size="lg"
+                className="w-full sm:w-auto"
               >
                 {isSubmitting ? (
                   <>
@@ -631,7 +639,7 @@ export default function QuizPage() {
         </div>
 
         {/* Question Navigation Dots */}
-        <div className="flex flex-wrap justify-center gap-2">
+        <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2">
           {quiz.questions.map((q, index) => {
             const isAnswered = answers[q.id]
             const isCurrent = index === safeQuestionIndex
@@ -639,7 +647,7 @@ export default function QuizPage() {
               <button
                 key={q.id}
                 onClick={() => setCurrentQuestionIndex(index)}
-                className={`h-10 w-10 rounded-full border-2 transition-all ${
+                className={`h-8 w-8 rounded-full border-2 text-xs transition-all sm:h-10 sm:w-10 sm:text-sm ${
                   isCurrent
                     ? "border-blue-500 bg-blue-500 text-white"
                     : isAnswered

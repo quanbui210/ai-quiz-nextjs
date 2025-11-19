@@ -197,27 +197,33 @@ export default function DashboardPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-8">
-        <div className="flex items-center justify-between">
+      <div className="space-y-6 sm:space-y-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
               Welcome back, {displayName}!
             </h1>
-            <p className="mt-2 text-gray-600">
+            <p className="mt-2 text-sm text-gray-600 sm:text-base">
               Let&apos;s continue your learning journey. Keep up the great work!
             </p>
           </div>
-          <div className="flex gap-3">
-            <Button
+          <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
+            {/* <Button
               disabled
               variant="outline"
               size="lg"
               onClick={() => router.push("/ai-tutor")}
+              className="w-full sm:w-auto"
             >
               <MessageSquare className="mr-2 h-5 w-5" />
-              Chat with AI Tutor
-            </Button>
-            <Button size="lg" onClick={() => router.push("/topics/new")}>
+              <span className="hidden sm:inline">Chat with AI Tutor</span>
+              <span className="sm:hidden">AI Tutor</span>
+            </Button> */}
+            <Button
+              size="lg"
+              onClick={() => router.push("/topics/new")}
+              className="w-full sm:w-auto"
+            >
               <Plus className="mr-2 h-5 w-5" />
               Start New Topic
             </Button>
@@ -237,57 +243,57 @@ export default function DashboardPage() {
           </div>
         ) : analyticsData ? (
           <>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-              <div className="rounded-lg bg-white p-6 shadow-sm">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="rounded-lg bg-white p-4 shadow-sm sm:p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">
+                    <p className="text-xs font-medium text-gray-600 sm:text-sm">
                       Overall Progress
                     </p>
-                    <p className="mt-2 text-3xl font-bold text-gray-900">
+                    <p className="mt-2 text-2xl font-bold text-gray-900 sm:text-3xl">
                       {analytics?.overview?.overallProgress != null
                         ? `${Math.round(analytics.overview.overallProgress)}%`
                         : "0%"}
                     </p>
                   </div>
                 </div>
-                <p className="mt-2 text-sm">
+                <p className="mt-2 text-xs sm:text-sm">
                   {analytics?.weeklyComparison?.progress
                     ? formatChange(analytics.weeklyComparison.progress.change)
                     : "No data"}
                 </p>
               </div>
 
-              <div className="rounded-lg bg-white p-6 shadow-sm">
+              <div className="hidden rounded-lg bg-white p-4 shadow-sm sm:block sm:p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">
+                    <p className="text-xs font-medium text-gray-600 sm:text-sm">
                       Topics Mastered
                     </p>
-                    <p className="mt-2 text-3xl font-bold text-gray-900">
+                    <p className="mt-2 text-2xl font-bold text-gray-900 sm:text-3xl">
                       {analytics?.weeklyComparison?.topics?.thisWeek ?? 0}
                     </p>
                   </div>
                 </div>
-                <p className="mt-2 text-sm">
+                <p className="mt-2 text-xs sm:text-sm">
                   {analytics?.weeklyComparison?.topics
                     ? formatChange(analytics.weeklyComparison.topics.change)
                     : "No data"}
                 </p>
               </div>
 
-              <div className="rounded-lg bg-white p-6 shadow-sm">
+              <div className="hidden rounded-lg bg-white p-4 shadow-sm sm:block sm:p-6 sm:col-span-2 lg:col-span-1">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">
+                    <p className="text-xs font-medium text-gray-600 sm:text-sm">
                       Quizzes Taken
                     </p>
-                    <p className="mt-2 text-3xl font-bold text-gray-900">
+                    <p className="mt-2 text-2xl font-bold text-gray-900 sm:text-3xl">
                       {analytics?.weeklyComparison?.attempts?.thisWeek ?? 0}
                     </p>
                   </div>
                 </div>
-                <p className="mt-2 text-sm">
+                <p className="mt-2 text-xs sm:text-sm">
                   {analytics?.weeklyComparison?.attempts
                     ? formatChange(analytics.weeklyComparison.attempts.change)
                     : "No data"}
@@ -323,12 +329,12 @@ export default function DashboardPage() {
             )} */}
 
             {analytics?.time && (
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="rounded-lg bg-white p-6 shadow-sm">
-                  <p className="text-sm font-medium text-gray-600">
+              <div className="hidden gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-4">
+                <div className="rounded-lg bg-white p-4 shadow-sm sm:p-6">
+                  <p className="text-xs font-medium text-gray-600 sm:text-sm">
                     Total Time Spent
                   </p>
-                  <p className="mt-2 text-2xl font-bold text-gray-900">
+                  <p className="mt-2 text-xl font-bold text-gray-900 sm:text-2xl">
                     {formatTime(analytics.time.totalTimeSpent)}
                   </p>
                   <p className="mt-1 text-xs text-gray-500">
@@ -336,21 +342,21 @@ export default function DashboardPage() {
                   </p>
                 </div>
 
-                <div className="rounded-lg bg-white p-6 shadow-sm">
-                  <p className="text-sm font-medium text-gray-600">
+                <div className="rounded-lg bg-white p-4 shadow-sm sm:p-6">
+                  <p className="text-xs font-medium text-gray-600 sm:text-sm">
                     Average Time Spent
                   </p>
-                  <p className="mt-2 text-2xl font-bold text-gray-900">
+                  <p className="mt-2 text-xl font-bold text-gray-900 sm:text-2xl">
                     {formatTime(analytics.time.averageTimeSpent)}
                   </p>
                   <p className="mt-1 text-xs text-gray-500">Per quiz</p>
                 </div>
 
-                <div className="rounded-lg bg-white p-6 shadow-sm">
-                  <p className="text-sm font-medium text-gray-600">
+                <div className="rounded-lg bg-white p-4 shadow-sm sm:p-6">
+                  <p className="text-xs font-medium text-gray-600 sm:text-sm">
                     Total Time Allocated
                   </p>
-                  <p className="mt-2 text-2xl font-bold text-gray-900">
+                  <p className="mt-2 text-xl font-bold text-gray-900 sm:text-2xl">
                     {formatTimeFromMs(analytics.time.totalTimeSet)}
                   </p>
                   <p className="mt-1 text-xs text-gray-500">
@@ -358,11 +364,11 @@ export default function DashboardPage() {
                   </p>
                 </div>
 
-                <div className="rounded-lg bg-white p-6 shadow-sm">
-                  <p className="text-sm font-medium text-gray-600">
+                <div className="rounded-lg bg-white p-4 shadow-sm sm:p-6">
+                  <p className="text-xs font-medium text-gray-600 sm:text-sm">
                     Time Efficiency
                   </p>
-                  <p className="mt-2 text-2xl font-bold text-gray-900">
+                  <p className="mt-2 text-xl font-bold text-gray-900 sm:text-2xl">
                     {analytics.time.timeEfficiency > 0
                       ? `${Math.round(analytics.time.timeEfficiency)}%`
                       : "N/A"}
@@ -377,16 +383,16 @@ export default function DashboardPage() {
             )}
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <div className="rounded-lg bg-white p-6 shadow-sm">
+              <div className="rounded-lg bg-white p-4 shadow-sm sm:p-6">
                 <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-xl font-semibold text-gray-900">
+                  <h2 className="text-lg font-semibold text-gray-900 sm:text-xl">
                     Your Performance Over Time
                   </h2>
                 </div>
-                <div className="mb-4 flex gap-2">
+                <div className="mb-4 flex flex-wrap gap-2">
                   <button
                     onClick={() => setTimeRange("last7Days")}
-                    className={`rounded-md px-3 py-1 text-sm font-medium transition-colors ${
+                    className={`rounded-md px-2 py-1 text-xs font-medium transition-colors sm:px-3 sm:text-sm ${
                       timeRange === "last7Days"
                         ? "bg-blue-100 text-blue-700"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -396,7 +402,7 @@ export default function DashboardPage() {
                   </button>
                   <button
                     onClick={() => setTimeRange("last30Days")}
-                    className={`rounded-md px-3 py-1 text-sm font-medium transition-colors ${
+                    className={`rounded-md px-2 py-1 text-xs font-medium transition-colors sm:px-3 sm:text-sm ${
                       timeRange === "last30Days"
                         ? "bg-blue-100 text-blue-700"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -406,7 +412,7 @@ export default function DashboardPage() {
                   </button>
                   <button
                     onClick={() => setTimeRange("last90Days")}
-                    className={`rounded-md px-3 py-1 text-sm font-medium transition-colors ${
+                    className={`rounded-md px-2 py-1 text-xs font-medium transition-colors sm:px-3 sm:text-sm ${
                       timeRange === "last90Days"
                         ? "bg-blue-100 text-blue-700"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -486,9 +492,9 @@ export default function DashboardPage() {
                 })()}
               </div>
 
-              <div className="rounded-lg bg-white p-6 shadow-sm">
+              <div className="rounded-lg bg-white p-4 shadow-sm sm:p-6">
                 <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-xl font-semibold text-gray-900">
+                  <h2 className="text-lg font-semibold text-gray-900 sm:text-xl">
                     Topics Overview
                   </h2>
                 </div>
@@ -519,16 +525,16 @@ export default function DashboardPage() {
                         .map((topic) => (
                           <div
                             key={topic.topicId}
-                            className="flex items-center justify-between rounded-lg border border-gray-200 p-4"
+                            className="flex flex-col gap-3 rounded-lg border border-gray-200 p-4 sm:flex-row sm:items-center sm:justify-between"
                           >
-                            <div className="flex-1">
+                            <div className="flex-1 min-w-0">
                               <div className="mb-2 flex items-center gap-2">
-                                <BookOpen className="h-4 w-4 text-blue-600" />
-                                <h3 className="font-medium text-gray-900">
+                                <BookOpen className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                                <h3 className="font-medium text-gray-900 truncate">
                                   {topic.topicName}
                                 </h3>
                               </div>
-                              <div className="flex items-center gap-4 text-sm text-gray-600">
+                              <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600 sm:gap-4 sm:text-sm">
                                 <span>
                                   {Math.round(topic.progressPercentage)}%
                                   complete
@@ -550,11 +556,11 @@ export default function DashboardPage() {
                                 ></div>
                               </div>
                             </div>
-                            <Link href={`/topics/${topic.topicId}`}>
+                            <Link href={`/topics/${topic.topicId}`} className="w-full sm:w-auto">
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="ml-4"
+                                className="w-full sm:ml-4 sm:w-auto"
                               >
                                 {topic.progressPercentage === 100
                                   ? "Review"

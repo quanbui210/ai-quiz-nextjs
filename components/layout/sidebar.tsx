@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import {
   LayoutDashboard,
@@ -13,6 +14,7 @@ import {
   CreditCard,
   Crown,
   Zap,
+  X,
 } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { useSubscription } from "@/hooks/use-subscription"
@@ -43,7 +45,11 @@ const navigation = [
   },
 ]
 
-export function Sidebar() {
+interface SidebarProps {
+  onClose?: () => void
+}
+
+export function Sidebar({ onClose }: SidebarProps) {
   const pathname = usePathname()
   const { signOut } = useAuth()
   const { subscription } = useSubscription()
@@ -82,24 +88,50 @@ export function Sidebar() {
     ? getPlanIcon(subscription.plan.name)
     : null
 
+  const handleLinkClick = () => {
+    // Close sidebar on mobile when a link is clicked
+    if (onClose) {
+      onClose()
+    }
+  }
+
   return (
-    <div className="flex h-screen w-64 flex-col border-r border-gray-200 bg-white">
+    <div className="flex h-screen w-64 flex-col border-r border-gray-200 bg-white shadow-lg lg:shadow-none">
       {/* Logo */}
-      <div className="flex h-16 items-center gap-3 border-b border-gray-200 px-6">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600">
-          <span className="text-xl font-bold text-white">Q</span>
+      <div className="flex h-16 items-center justify-between gap-3 border-b border-gray-200 px-6">
+        <div className="flex items-center gap-3">
+          <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg">
+            <Image
+              src="/icons/icon.svg"
+              alt="QuizzAI Logo"
+              width={60}
+              height={60}
+              className="object-contain"
+              priority
+            />
+          </div>
+          <span className="text-xl font-semibold text-gray-900">QuizzAI</span>
         </div>
-        <span className="text-xl font-semibold text-gray-900">QuizzAI</span>
+        {/* Close button for mobile */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onClose}
+          className="lg:hidden"
+        >
+          <X className="h-5 w-5" />
+        </Button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-4 py-4">
+      <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-4">
         {navigation.map((item) => {
           const isActive = pathname === item.href
           return (
             <Link
               key={item.name}
               href={item.href}
+              onClick={handleLinkClick}
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                 isActive
@@ -119,6 +151,7 @@ export function Sidebar() {
         <div className="border-t border-gray-200 px-4 py-3">
           <Link
             href="/subscription"
+            onClick={handleLinkClick}
             className={cn(
               "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
               pathname === "/subscription"
@@ -175,6 +208,7 @@ export function Sidebar() {
         <div className="space-y-1">
           <Link
             href="/subscription"
+            onClick={handleLinkClick}
             className={cn(
               "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
               pathname === "/subscription"
@@ -187,13 +221,17 @@ export function Sidebar() {
           </Link>
           <Link
             href="/settings"
+            onClick={handleLinkClick}
             className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
           >
             <Settings className="h-4 w-4" />
             Settings
           </Link>
           <button
-            onClick={signOut}
+            onClick={() => {
+              signOut()
+              handleLinkClick()
+            }}
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
           >
             <LogOut className="h-4 w-4" />
